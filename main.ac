@@ -1,19 +1,11 @@
-#import std::io { print }
-
-typedef struct {
-    int number;
-} Resource;
-
-void Resource..drop(*self) {
-    free_resource(self);
-}
+#import std::str { str_from_cstr }
+#import std::fs { File, file_open_readonly }
+#import std::io { print, IoResult }
+#import std::string { String }
 
 int main() {
-    Resource res = {69};
-    print("doing stuff\n");
+    File f = file_open_readonly("justfile");
+    String res = f..read_to_string()..unwrap();
+    print(res..as_str());
     return 0;
-}
-
-void free_resource(Resource *resource) {
-    print("i freed it!\n");
 }

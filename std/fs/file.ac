@@ -5,7 +5,7 @@
 #import std::panic { panic }
 #import std::alloc { Allocator }
 #import std::io { IoResult }
-// #import std::result { ok, err }
+#import std::result { ok, err }
 
 /// ```c
 /// int fclose(FILE *stream);
@@ -50,11 +50,11 @@ static File file_open_readonly(str path) {
         @panic("could not open file (read-only)");
     }
 
-    File f = { file };
-    return f;
+    File f = { file }
+    return move(f);
 }
 
-static IoResult[int] File..read_to_string<alloc>(*self) {
+static IoResult[String] File..read_to_string<alloc>(*self) {
     enum { CHUNK_SIZE = 4096 };
 
     String buf = string_with_capacity<alloc>(CHUNK_SIZE);
@@ -74,6 +74,8 @@ static IoResult[int] File..read_to_string<alloc>(*self) {
             }
         }
     }
+
+    return ok(move(buf));
 }
 
 void File..drop(*self) {

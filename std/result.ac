@@ -4,6 +4,7 @@
 #import std::panic { panic }
 
 /// A generic error.
+#meta pick tag=passing target=as ok=true err=false
 typedef struct {
     union {
         T ok;
@@ -12,16 +13,20 @@ typedef struct {
     bool passing;
 } Result[T, E];
 
+static inline T ident(T x) {
+    return move(x);
+}
+
 static inline Result[T, E] ok(T data) {
     Result[T, E] res = { .passing = true };
-    res.as.ok = data;
-    return res;
+    res.as.ok = ident(move(data));
+    return move(res);
 }
 
 static inline Result[T, E] err(E error) {
-    Result[T, E] res = { .passing = false };
+    Result[T, E] res = { .as = error, .passing = false };
     res.as.err = error;
-    return res;
+    return move(res);
 }
 
 static inline bool Result[T, E]..is_ok(*self) {

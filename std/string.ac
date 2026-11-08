@@ -145,10 +145,7 @@ static inline str TempCString..as_str(const *self) {
 /// Converts this temporary C-style string back to an
 /// `std::string { String }`.
 static inline String TempCString..revert_to_string(self) {
-    // FIXME: once the compiler stabilizes, this should be replaced
-    //        with a direct move.
-    String s = { self.src.inner };
-    return s;
+    return move(self.src);
 }
 
 #export { TempCString, TempCString..as_cstr, TempCString..as_str, TempCString..revert_to_string }

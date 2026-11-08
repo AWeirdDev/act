@@ -22,6 +22,11 @@ str str_from_cstr(const char* cstr) {
     return { .len = len, .ptr = cstr };
 }
 
+/// Gets the length of the str slice.
+static inline size_t str..len(*self) {
+    return self->len;
+}
+
 str str..slice(*self, size_t start, size_t end) {
     if (end > self->len) {
         end = self->len;
