@@ -131,4 +131,4 @@ int main() {
 }
 ```
 
-This is what this language is about, generally. The `std` in this repository is solely an extra if you want something ergonomic for the language. You can, of course, plug in your own `std` if you somehow human slop. CVEs are the collective beauty of human culture, as long as they're' made by us, and made for us. But in all seriousness, if you find any bugs or unsoundness in the language or the libraries, feel free to file an issue.
+This is what this language is about, generally. The `std` in this repository is solely an extra if you want something ergonomic for the language. You can, of course, plug in your own `std` if you somehow dislike human slop, despite the fact that CVEs are the collective beauty of human culture, as long as they're' made by us, and made for us. But in all seriousness, if you find any bugs or unsoundness in the language or the libraries, feel free to file an issue.
