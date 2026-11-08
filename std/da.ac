@@ -29,10 +29,9 @@ static inline size_t DynamicArray[T]..capacity(*self) {
 ///
 /// The unit is `T`.
 static inline DynamicArray[T] da_with_capacity<alloc>(size_t capacity) {
-    @panic("not implemented");
-    // DynamicArray[T] arr = da_new<alloc>();
-    // arr..reserve(capacity);
-    // return move(arr);
+    DynamicArray[T] arr = da_new<alloc>();
+    arr..reserve(capacity);
+    return move(arr);
 }
 
 static inline Layout DynamicArray[T]..current_layout(const *self) {

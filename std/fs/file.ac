@@ -43,14 +43,14 @@ typedef struct {
 } File;
 
 static File file_open_readonly(str path) {
-    TempCString path_s = string_from_str(filename)..to_temp_cstring();
+    TempCString path_s = string_from_str(path)..to_temp_cstring();
 
-    FILE *file = fopen(path_s..as_cstr(), "rb");
+    FILE *file = fopen(path_s..as_cstr(), c"rb");
     if (file == NULL) {
         @panic("could not open file (read-only)");
     }
 
-    File f = { file }
+    File f = { file };
     return move(f);
 }
 
@@ -61,8 +61,8 @@ static IoResult[String] File..read_to_string<alloc>(*self) {
     size_t n_read;
 
     while ((
-        n_read = fread(buf..as_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
-        n > 0
+        n_read = fread(buf..as_mutable_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
+        n_read > 0
     )) {
         buf..reserve(buf..len());
         buf.inner.len += n_read;

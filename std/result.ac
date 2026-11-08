@@ -41,14 +41,14 @@ static inline T Result[T, E]..unwrap(self) {
     if (self..is_err()) {
         @panic("found err during Result[T, E]..unwrap()");
     }
-    return self.as.ok;
+    return move(self.as.ok);
 }
 
 static inline T Result[T, E]..unwrap_err(self) {
     if (self..is_ok()) {
         @panic("found ok during Result[T, E]..unwrap_err()");
     }
-    return self.as.err;
+    return move(self.as.err);
 }
 
 #export { ok, err }

@@ -1,11 +1,13 @@
+#import std::alloc { Allocator, general_allocator }
 #import std::str { str_from_cstr }
 #import std::fs { File, file_open_readonly }
-#import std::io { print, IoResult }
+#import std::io { println, IoResult }
 #import std::string { String }
 
 int main() {
+    Allocator gpa = general_allocator();
     File f = file_open_readonly("justfile");
-    String res = f..read_to_string()..unwrap();
-    print(res..as_str());
-    return 0;
+    String s = f..read_to_string<gpa>()..unwrap();
+    println("ok");
+    println(s..as_str());
 }
