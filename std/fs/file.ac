@@ -64,7 +64,7 @@ static IoResult[String] File..read_to_string<alloc>(*self) {
         n_read = fread(buf..as_mutable_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
         n_read > 0
     )) {
-        buf..reserve(buf..len());
+        buf..reserve(buf..len() + CHUNK_SIZE);
         buf.inner.len += n_read;
 
         if (n_read < CHUNK_SIZE) {
