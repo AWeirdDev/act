@@ -1,5 +1,25 @@
-#import std::fs::file { OpenOptions }
+#import std::str { str }
+#import std::io { print }
+#import std::iter { Iter }
+#import std::maybe { Maybe, some, none }
+
+typedef struct {
+    size_t i;
+} Counter;
+
+Maybe[size_t] (Iter[size_t])Counter..next(*self) {
+    size_t i = self->i--;
+    if (i <= 0) {
+        return none();
+    }
+    return some(i);
+}
 
 int main() {
-    OpenOptions opts = { .read = true, 0 };
+    Counter c = {3};
+
+    Maybe[size_t] item = none();
+    while ((item = c..next(), item..is_some())) {
+        print("Hello, World!\n");
+    }
 }
