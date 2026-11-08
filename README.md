@@ -132,3 +132,104 @@ int main() {
 ```
 
 This is what this language is about, generally. The `std` in this repository is solely an extra if you want something ergonomic for the language. You can, of course, plug in your own `std` if you somehow dislike human slop, despite the fact that CVEs are the collective beauty of human culture, as long as they're' made by us, and made for us. But in all seriousness, if you find any bugs or unsoundness in the language or the libraries, feel free to file an issue.
+
+***
+
+## C interop
+Most C code is valid aC, except anything starting with `#`. In aC, those are transpiler directives, which tells the transpiler what to do. You usually don't want to touch them.
+
+### C strings
+In aC, literal strings are represented with `std::str { str }`, which is a fat pointer with length information instead of a trailing null byte. For general literal string cases, just simply use a C string literal, which is prefixed with `c`:
+
+```c
+const char* hello = c"world!\n";
+printf(hello);
+```
+
+You can also do it the other way around. C strings are easy to convert to `std::str { str }` because we only need to care about counting the length and leaving out the trailing null byte.
+
+```c
+#import std::str { str_from_cstr }
+#import std::io { print }
+
+str hello = str_from_cstr(c"world!\n");
+print(hello);
+```
+
+### Pasting raw C
+You can do this in the top level, with `#foreign` and `#endforeign`:
+
+```c
+#foreign
+
+#define HELLO_WORLD 69420
+
+// super dirty c code! (please imagine)
+struct dirty_c_t {
+    union {
+        int a;
+        char b;
+    } c;
+    char d;
+};
+
+#if defined(__APPLE__)
+    #error "sussy user detected!!11!"
+#endif
+
+#endforeign
+```
+
+### Using C items
+You can directly use any C type or function available, as long as they're reachable. In this case, you can use `#include` to include C headers directly, and use `#extern` to change their names or add docstrings if needed.
+
+```c
+#include <stdio.h>
+
+/// This function is printf. Wow.
+/// You're reading the docs!
+#extern c_printf printf
+
+int main() {
+    c_printf(c"hello, world!\n");
+}
+```
+
+## Writing tests
+You can write tests directly with `#test`:
+
+```c
+#include <assert.h>
+
+#test
+void general() {
+    assert(1 == 1);
+}
+```
+
+```console
+[==========] Running 1 test from awa.ac
+[ RUN      ] general
+[       OK ] general (207 ms)
+[==========] 1 test ran. (207 ms total)
+[  PASSED  ] 1 test.
+```
+
+If the function doesn't panic, it's considered a successful test result.
+
+Additionally, you can also use transpiler directives specifically for the test cases:
+
+```c
+#tests
+
+#include <assert.h>
+#import std::str { str }
+
+#test
+void general() {
+    str a = "hello, world!";
+    assert(a.len == a..len());
+}
+
+#endtests
+```
