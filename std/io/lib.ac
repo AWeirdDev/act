@@ -1,6 +1,6 @@
 /// I/O library for aC.
 
-#import "./stdout" { print }
+#import "./stdout" { print, println }
 #import "./result" { IoResult }
 
-#export { print, IoResult }
+#export { print, println, IoResult }

@@ -10,9 +10,22 @@ typedef struct {
     DynamicArray[char] inner;
 } String;
 
+/// Creates a new `std::string { String }`. This function does
+/// not allocate.
+///
+/// Unlike zero-initializing, this ensures that the given
+/// `<alloc>` (allocator) is attached to the instance of this
+/// string.
 static inline String string_new<alloc>() {
     DynamicArray[char] da = da_new<alloc>();
-    return (String){ .inner = da };
+    return (String){ .inner = move(da) };
+}
+
+/// Creates a new `std::string { String }`, and allocates a capacity
+/// of at least `capacity` (unit: `char`).
+static inline String string_with_capacity<alloc>(size_t capacity) {
+    DynamicArray[char] da = da_with_capacity<alloc>(capacity);
+    return (String){ .inner = move(da) };
 }
 
 static inline String string_from_cstr<alloc>(const char* cstr) {
@@ -20,14 +33,14 @@ static inline String string_from_cstr<alloc>(const char* cstr) {
     DynamicArray[char] da = da_with_capacity<alloc>(len);
     memcpy(da.items, cstr, len);
     da.len = len;
-    return (String){ .inner = da };
+    return (String){ .inner = move(da) };
 }
 
 static inline String string_from_str<alloc>(const str src) {
     DynamicArray[char] da = da_with_capacity<alloc>(src.len);
     memcpy(da.items, src.ptr, src.len);
     da.len = src.len;
-    return (String){ .inner = da };
+    return (String){ .inner = move(da) };
 }
 
 /// Appends a `char` to the string.
@@ -35,11 +48,22 @@ static inline void String..append<alloc: self>(*self, char chr) {
     self->inner..append(chr);
 }
 
+/// Reserves space of at least `capacity` (unit: `char`).
+static inline void String..reserve<alloc: self>(*self, size_t capacity) {
+    self->inner..reserve(capacity);
+}
+
+/// Pops off a character off the string, if it has one.
+static inline Maybe[char] String..pop(*self) {
+    return self->inner..pop();
+}
+
 /// Gets the length of the string.
 static inline size_t String..len(const *self) {
     return self->inner.len;
 }
 
+/// Gets the character at the given index, if exists.
 static inline Maybe[char] String..get(const *self, size_t index) {
     if (index >= self..len()) {
         return none();
@@ -60,15 +84,78 @@ static inline str String..as_str(const *self) {
     return (str){ .len = self->inner.len, .ptr = self->inner.items };
 }
 
+/// Gets the underlying character pointer.
+static inline const char* String..as_ptr(const *self) {
+    return self->inner.items;
+}
+
+/// Gets the underlying character pointer, as mutable.
+static inline char* String..as_mutable_ptr(*self) {
+    return self->inner.items;
+}
+
 /// Copies this string.
 static inline void String..copy<alloc>(const *self) {
     return self->inner..copy<alloc>();
 }
 
-#export { string_new, string_from_cstr, string_from_str }
-#export { String, String..append, String..append_str, String..as_str }
+/// Converts this string into a temporary C-style string, which is
+/// null-terminated.
+static inline TempCString String..to_temp_cstring<alloc>(self) {
+    // FIXME
+    TempCString res = { move(self) };
+    res.src..append('\0');
+    return move(res);
+}
+
+// static inline void
+
+#export { string_new, string_with_capacity, string_from_cstr, string_from_str }
+#export { String, String..reserve, String..append, String..append_str, String..pop }
+#export { String..get, String..copy, String..len }
+#export { String..as_str, String..as_ptr, String..as_mutable_ptr }
+#export { String..to_temp_cstring }
 
 // == String
+
+// TempCString ==
+
+/// A temporary C-style string, which is null-terminated.
+///
+/// As the name suggests, it's temporary, and it should be
+/// created from a `std::string { String }`.
+#meta privateconstruct
+typedef struct {
+    String src;
+} TempCString;
+
+
+/// Gets the C-style string reference.
+static inline const char* TempCString..as_cstr(const *self) {
+    return self->src..as_ptr();
+}
+
+/// Gets a `str` slice representation of the underlying string.
+/// However, the null byte is not part of the slice.
+static inline str TempCString..as_str(const *self) {
+    str s = self->src..as_str();
+    return (str){ .len = s.len - 1, .ptr = s.ptr - 1 };
+}
+
+/// Converts this temporary C-style string back to an
+/// `std::string { String }`.
+static inline String TempCString..revert_to_string(self) {
+    // FIXME: once the compiler stabilizes, this should be replaced
+    //        with a direct move.
+    String s = { self.src.inner };
+    return s;
+}
+
+#export { TempCString, TempCString..as_cstr, TempCString..as_str, TempCString..revert_to_string }
+
+// == TempCString
+
+// StringIter ==
 
 typedef struct {
     size_t counter;
@@ -92,3 +179,17 @@ Maybe[char] (Iter[char])StringIter..next(*self) {
 }
 
 #export { String..iter, StringIter }
+
+// == StringIter
+
+#tests
+
+#import std::alloc { Allocator, general_allocator }
+
+#test
+void general() {
+    Allocator gpa = general_allocator();
+    String s = string_new<gpa>();
+}
+
+#endtests

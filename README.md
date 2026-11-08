@@ -7,7 +7,7 @@ aC is a superset of C. It has a few additional features a modern programming lan
 It is currently impossible to compile aC code unless you have a working transpiler, which is not available publicly. But feel free to reach me out if you'd like to try it out yourself.
 
 ## Naming
-The name "aC" doesn't really need to have any meaning. But originally, it was because I want a language that can transpile to C and ensures that my program gets accepted \([AC](https://zerojudge.tw/)\) no matter what. Interestingly, as you can see, the language itself has steered to a direction which makes it a bit complicated and "lower-level than expected" in a sense.
+The name "aC" doesn't really need to have any meaning. But originally, it was because I wanted a language that could transpile to C and ensure that my program could get accepted \([AC](https://zerojudge.tw/)\) no matter what. Interestingly, as you can see, the language itself has steered to a direction which makes it a bit complicated and "lower-level than expected" in a sense.
 
 ## Design
 aC has a few features worth noting. First, it adds a few features from Rust, like [Drop](https://doc.rust-lang.org/std/ops/trait.Drop.html). Most of the time in C, it's considered "best practice" to put things into an arena allocator, for fear that one might forget to free allocated memory leading to inevitable memory leaks. But I don't buy that. It's definitely one of: a) you're not paying attention to your code at all; b) you hate reading your code; or c) you're lazy. In this case, I'm more of a c) person (pun intended), so why not build a program that tells you "hey, remember to free this sh\*t." I think that makes perfect sense.
@@ -40,7 +40,14 @@ void Resource..drop(*self) {
 }
 ```
 
-In the above example, the output C would be like so:
+In the above example, the output would be:
+
+```console
+doing stuff
+i freed it!
+```
+
+...and the output C would be like so:
 
 <details>
     <summary>Expand output</summary>
@@ -124,4 +131,4 @@ int main() {
 }
 ```
 
-This is what this language is about, generally.
+This is what this language is about, generally. The `std` in this repository is solely an extra if you want something ergonomic for the language. You can, of course, plug in your own `std` if you somehow human slop. CVEs are the collective beauty of human culture, as long as they're' made by us, and made for us. But in all seriousness, if you find any bugs or unsoundness in the language or the libraries, feel free to file an issue.

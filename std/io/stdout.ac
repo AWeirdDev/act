@@ -2,9 +2,15 @@
 
 #import std::str { str }
 
-/// Prints a string.
+/// Prints text to stdout.
 static inline void print(str text) {
     fwrite(text.ptr, sizeof(*text.ptr), text.len, stdout);
 }
 
-#export { print }
+/// Prints text to stdout, with a new line character.
+static inline void println(str text) {
+    fwrite(text.ptr, sizeof(*text.ptr), text.len, stdout);
+    fputc('\n', stdout);
+}
+
+#export { print, println }

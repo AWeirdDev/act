@@ -1,0 +1,3 @@
+#import "./file" { File, file_open_readonly }
+
+#export { File, file_open_readonly }

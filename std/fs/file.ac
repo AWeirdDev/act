@@ -1,28 +1,84 @@
 #include <stdbool.h>
 
-#foreign
+#import std::str { str }
+#import std::string { TempCString, string_from_str, string_with_capacity }
+#import std::panic { panic }
+#import std::alloc { Allocator }
+#import std::io { IoResult }
+// #import std::result { ok, err }
 
-#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-    #include <fcntl.h>
-#endif
+/// ```c
+/// int fclose(FILE *stream);
+/// ```
+#extern fclose fclose
 
-#endforeign
+/// ```c
+/// FILE *
+/// fopen(const char * restrict path, const char * restrict mode);
+/// ```
+#extern fopen fopen
 
-/// Used for some file attributes (e.g., file mode).
-/// It is an integer type.
-#extern mode_t mode_t
+/// ```c
+/// size_t
+/// fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+/// ```
+#extern fread fread
+
+/// ```c
+/// int
+/// ferror(FILE *stream);
+/// ```
+
+// TODO: use platform-specific apis?
+// #foreign
+//
+// #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+//     #include <fcntl.h>
+// #endif
+//
+// #endforeign
 
 typedef struct {
-    // generic
-    bool read;
-    bool write;
-    bool append;
-    bool truncate;
-    bool create;
-    bool create_new;
+    FILE *file;
+} File;
 
-    // system-specific
-    mode_t mode;
-} OpenOptions;
+static File file_open_readonly(str path) {
+    TempCString path_s = string_from_str(filename)..to_temp_cstring();
 
-#export { OpenOptions }
+    FILE *file = fopen(path_s..as_cstr(), "rb");
+    if (file == NULL) {
+        @panic("could not open file (read-only)");
+    }
+
+    File f = { file };
+    return f;
+}
+
+static IoResult[int] File..read_to_string<alloc>(*self) {
+    enum { CHUNK_SIZE = 4096 };
+
+    String buf = string_with_capacity<alloc>(CHUNK_SIZE);
+    size_t n_read;
+
+    while ((
+        n_read = fread(buf..as_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
+        n > 0
+    )) {
+        buf..reserve(buf..len());
+        buf.inner.len += n_read;
+
+        if (n_read < CHUNK_SIZE) {
+            int error_code = ferror(self->file);
+            if (error_code != 0) {
+                return err(error_code);
+            }
+        }
+    }
+}
+
+void File..drop(*self) {
+    fclose(self->file);
+}
+
+#export { file_open_readonly }
+#export { File, File..read_to_string }

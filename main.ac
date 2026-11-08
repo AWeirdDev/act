@@ -1,25 +1,19 @@
-#import std::str { str }
 #import std::io { print }
-#import std::iter { Iter }
-#import std::maybe { Maybe, some, none }
 
 typedef struct {
-    size_t i;
-} Counter;
+    int number;
+} Resource;
 
-Maybe[size_t] (Iter[size_t])Counter..next(*self) {
-    size_t i = self->i--;
-    if (i <= 0) {
-        return none();
-    }
-    return some(i);
+void Resource..drop(*self) {
+    free_resource(self);
 }
 
 int main() {
-    Counter c = {3};
+    Resource res = {69};
+    print("doing stuff\n");
+    return 0;
+}
 
-    Maybe[size_t] item = none();
-    while ((item = c..next(), item..is_some())) {
-        print("Hello, World!\n");
-    }
+void free_resource(Resource *resource) {
+    print("i freed it!\n");
 }
