@@ -2,7 +2,7 @@
 
 #import std::panic { panic }
 
-#meta either tag=present target=value empty=false
+#meta maybe tag=present target=value empty=false
 #meta privateconstruct
 typedef struct {
     bool present;
