@@ -1,0 +1,18 @@
+#foreign
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
+    // C23
+    #define AC__ALIGN_OF_(T) alignof(T)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    // _Alignof
+    #define AC__ALIGN_OF_(T) _Alignof(T)
+#else
+    #error "aC only compiles with C11+."
+#endif
+#endforeign
+
+/// Gets the alignment of the given type `T`.
+@macro align_of($T) {
+    AC__ALIGN_OF_($T)
+}
+
+#export { align_of }

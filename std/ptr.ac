@@ -1,0 +1,15 @@
+#meta neverzero field=inner
+#meta privateconstruct
+typedef struct {
+    T *inner;
+} NeverNull[T];
+
+NeverNull[T] nevernull_new_unchecked(T* ptr) {
+    return { .inner = ptr };
+}
+
+T NeverNull[T]..deref(*self) {
+    return *self->inner;
+}
+
+#export { NeverNull, nevernull_new_unchecked }

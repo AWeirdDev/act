@@ -1,0 +1,6 @@
+typedef struct {
+    A left;
+    B right;
+} Pair[A, B];
+
+#export { Pair }

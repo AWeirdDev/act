@@ -1,0 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void panic() {
+    fprintf(stderr, c"program panicked!\n");
+    exit(-1);
+}
+
+#export { panic }

@@ -1,0 +1,10 @@
+#include <stdio.h>
+
+#import std::str { str }
+
+/// Prints a string.
+static inline void print(str text) {
+    fwrite(text.ptr, sizeof(*text.ptr), text.len, stdout);
+}
+
+#export { print }

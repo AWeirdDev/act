@@ -1,0 +1,35 @@
+#include <stdbool.h>
+
+#meta either tag=present target=value empty=false
+#meta privateconstruct
+typedef struct {
+    bool present;
+    T value;
+} Maybe[T];
+
+static inline Maybe[T] none() {
+    return { .present = false };
+}
+
+static inline Maybe[T] some(T value) {
+    return { .present = true, .value = value };
+}
+
+static inline Maybe[T*] Maybe[T]..as_referenced(*self) {
+    return { .present = self->present, .value = &self->value };
+}
+
+static inline bool Maybe[T]..is_some(*self) {
+    return self->present;
+}
+
+static inline bool Maybe[T]..is_none(*self) {
+    return !self->present;
+}
+
+static inline T Maybe[T]..unwrap(self) {
+    return self.value;
+}
+
+#export { none, some }
+#export { Maybe, Maybe..is_some, Maybe..is_none, Maybe..unwrap }

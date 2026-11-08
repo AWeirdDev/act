@@ -1,0 +1,11 @@
+@macro make($ty $name) {
+    #meta neverzero field=inner
+    typedef struct {
+        $ty inner;
+    } $name;
+}
+
+@make(int neverzero_int)
+@make(size_t neverzero_size_t)
+
+#export { neverzero_int, neverzero_size_t }

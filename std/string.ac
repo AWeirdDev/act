@@ -1,0 +1,94 @@
+#import std::alloc { Allocator }
+#import std::da { DynamicArray, da_new, da_with_capacity }
+#import std::str { str }
+#import std::iter { Iter }
+#import std::maybe { Maybe, some, none }
+
+// String ==
+
+typedef struct {
+    DynamicArray[char] inner;
+} String;
+
+static inline String string_new<alloc>() {
+    DynamicArray[char] da = da_new<alloc>();
+    return (String){ .inner = da };
+}
+
+static inline String string_from_cstr<alloc>(const char* cstr) {
+    size_t len = strlen(cstr);
+    DynamicArray[char] da = da_with_capacity<alloc>(len);
+    memcpy(da.items, cstr, len);
+    da.len = len;
+    return (String){ .inner = da };
+}
+
+static inline String string_from_str<alloc>(const str src) {
+    DynamicArray[char] da = da_with_capacity<alloc>(src.len);
+    memcpy(da.items, src.ptr, src.len);
+    da.len = src.len;
+    return (String){ .inner = da };
+}
+
+/// Appends a `char` to the string.
+static inline void String..append<alloc: self>(*self, char chr) {
+    self->inner..append(chr);
+}
+
+/// Gets the length of the string.
+static inline size_t String..len(const *self) {
+    return self->inner.len;
+}
+
+static inline Maybe[char] String..get(const *self, size_t index) {
+    if (index >= self..len()) {
+        return none();
+    } else {
+        return some(self->inner.items[index]);
+    }
+}
+
+/// Appends from a `str`.
+static inline void String..append_str<alloc: self>(*self, str src) {
+    self->inner.len += src.len;
+    self->inner..reserve(self->inner.len);
+    memcpy(self->inner.items, src.ptr, src.len);
+}
+
+/// Gets a `str` slice representation of this string.
+static inline str String..as_str(const *self) {
+    return (str){ .len = self->inner.len, .ptr = self->inner.items };
+}
+
+/// Copies this string.
+static inline void String..copy<alloc>(const *self) {
+    return self->inner..copy<alloc>();
+}
+
+#export { string_new, string_from_cstr, string_from_str }
+#export { String, String..append, String..append_str, String..as_str }
+
+// == String
+
+typedef struct {
+    size_t counter;
+    size_t len;
+    const char *items;
+} StringIter;
+
+/// Gets an iterator over the string.
+///
+/// During iteration, the source string should never
+/// mutate.
+StringIter String..iter(const *self) {
+    return { 0, self..len(), self->inner.items };
+}
+
+Maybe[char] (Iter[char])StringIter..next(*self) {
+    if (self->counter >= self->len) {
+        return none();
+    }
+    return some(self->items[self->counter++]);
+}
+
+#export { String..iter, StringIter }

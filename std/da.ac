@@ -1,0 +1,69 @@
+#include <stddef.h>
+#include <string.h>
+
+#import std::alloc { Layout, align_of }
+
+typedef struct {
+    size_t len;
+    size_t capacity;
+    T *items;
+} DynamicArray[T];
+
+DynamicArray[T] da_new<alloc>() {
+    DynamicArray[T] arr = { 0 };
+    return arr;
+}
+
+/// Allocates a dynamic array with *at least* a capacity of the
+/// provided `capacity`.
+///
+/// The unit is `T`.
+DynamicArray[T] da_with_capacity<alloc>(size_t capacity) {
+    DynamicArray[T] arr = da_new<alloc>();
+    arr..reserve(capacity);
+    return arr;
+}
+
+static inline Layout DynamicArray[T]..current_layout(*self) {
+    return { .size = sizeof(T) * self->capacity, .align = @align_of(T) };
+}
+
+void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
+    Layout old_layout = { .size = self->items == NULL ? 0 : sizeof(T) * self->capacity, .align = @align_of(T) };
+    if (self->capacity == 0) {
+        self->capacity = 1;
+    }
+
+    while (self->capacity < capacity) {
+        self->capacity *= 2;
+    }
+
+    self->items = alloc..reallocate(
+        self->items,
+        old_layout,
+        (Layout){ .size = sizeof(T) * self->capacity, .align = @align_of(T) }
+    );
+
+    return;
+}
+
+void DynamicArray[T]..append<alloc: self>(*self, T item) {
+    if (self->len + 1 > self->capacity) {
+        self..reserve(self->len + 1);
+    }
+    self->items[self->len++] = item;
+}
+
+DynamicArray[T] DynamicArray[T]..copy<alloc>(const *self) {
+    T *ptr = alloc..allocate((Layout){ .size = self->capacity, .align = @align_of(T) });
+    memcpy(ptr, self->items, self->len);
+    DynamicArray[T] new = { .len = self->len, .capacity = self->capacity, .items = ptr };
+    return new;
+}
+
+void DynamicArray[T]..drop<alloc: self>(*self) {
+    alloc..deallocate(self->items, self..current_layout());
+}
+
+#export { da_new, da_with_capacity }
+#export { DynamicArray, DynamicArray..reserve, DynamicArray..append, DynamicArray..copy }

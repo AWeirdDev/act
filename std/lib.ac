@@ -1,0 +1,12 @@
+/// The aC standard library.
+///
+/// You can plug in your own std by passing --std in the transpiler flags.
+/// This is just a library I typically rely upon.
+///
+/// This library should only be compiled with C11+.
+
+#foreign
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+    #error aC only compiles with C11+.
+#endif
+#endforeign

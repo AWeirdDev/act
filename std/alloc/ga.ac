@@ -1,0 +1,72 @@
+#include <stdlib.h>
+
+#import std::panic { panic }
+
+#import "./allocator" { Allocator }
+#import "./layout" { Layout }
+
+static void *ga_alloc(Layout layout) {
+    size_t align = layout.align < sizeof(void*) ? sizeof(void*) : layout.align;
+    size_t size = (layout.size + align - 1) / align * align;
+    void* allocated = aligned_alloc(align, size);
+    if (allocated == NULL) {
+        panic();
+    }
+    return allocated;
+}
+
+static void ga_dealloc(void *ptr, Layout _old_layout) {
+    (void)_old_layout;
+    free(ptr);
+}
+
+static void *ga_realloc(void *ptr, Layout _old_layout, Layout new_layout) {
+    (void)_old_layout;
+    return realloc(ptr, new_layout.size);
+}
+
+/// The process-wide default allocator.
+Allocator DEFAULT_GLOBAL_ALLOCATOR = general_allocator();
+
+/// A general-purpose allocator.
+///
+/// Under the hood, it utilies the memory allocation methods
+/// defined in `stdlib.h`, specifically `malloc()`, `free()`,
+/// and `realloc()`. For more information, see malloc(3).
+///
+/// Example:
+/// ```ac
+/// #import std::alloc { Allocator, Layout, align_of }
+///
+/// // "gpa" for "general-purpose allocator"
+/// Allocator gpa = general_allocator();
+///
+/// // allocate for one int
+/// gpa.allocate(
+///     (Layout){ .size = 1 * sizeof(int), .align = @align_of(int) }
+///  );
+/// ```
+static inline Allocator general_allocator() {
+    return (Allocator){
+        .__alloc = ga_alloc,
+        .__dealloc = ga_dealloc,
+        .__realloc = ga_realloc
+    };
+}
+
+#export { general_allocator, DEFAULT_GLOBAL_ALLOCATOR }
+
+#tests
+
+#import "./utils" { align_of }
+
+#test
+void gpa() {
+    Allocator gpa = general_allocator();
+    Layout layout = { .size = sizeof(int), .align = @align_of(int) };
+    int *loc = gpa..allocate(layout);
+    *loc = 69420;
+    gpa..deallocate(loc, layout);
+}
+
+#endtests

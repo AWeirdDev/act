@@ -1,0 +1,9 @@
+#include <stdint.h>
+
+/// Memory layout.
+typedef struct {
+    size_t size;
+    size_t align;
+} Layout;
+
+#export { Layout }

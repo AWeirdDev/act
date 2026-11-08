@@ -1,0 +1,28 @@
+#import std::maybe { Maybe, some, none }
+#import std::pair { Pair }
+
+/// An iterator interface.
+#meta onevariant
+interface Iter[T];
+
+/// Gets the next item.
+Maybe[T] Iter[T]..next(*self);
+
+typedef struct {
+    I iter;
+    size_t count;
+} EnumerateIter[I, T];
+
+EnumerateIter[Self, T] Iter[T]..enumerate(self) {
+    return { .count = 0, .iter = self };
+}
+
+Maybe[Pair[size_t, T]] (Iter[Pair[size_t, T]])EnumerateIter[I, T]..next(*self) {
+    Maybe[T] res = self->iter..next();
+    if (res..is_some()) {
+        return some((Pair[size_t, T]){ self->count++, res..unwrap() });
+    }
+    return none();
+}
+
+#export { Iter, EnumerateIter }
