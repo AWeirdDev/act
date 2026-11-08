@@ -5,3 +5,6 @@ build:
 
 run: build
     ./build/main
+
+test NAME:
+    act test ./std/{{ NAME }}.ac --std ./std

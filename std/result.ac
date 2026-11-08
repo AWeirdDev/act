@@ -1,0 +1,66 @@
+#include <stdbool.h>
+
+#import std::str { str }
+#import std::panic { panic }
+
+/// A generic error.
+typedef struct {
+    union {
+        T ok;
+        E err;
+    } as;
+    bool passing;
+} Result[T, E];
+
+static inline Result[T, E] ok(T data) {
+    Result[T, E] res = { .passing = true };
+    res.as.ok = data;
+    return res;
+}
+
+static inline Result[T, E] err(E error) {
+    Result[T, E] res = { .passing = false };
+    res.as.err = error;
+    return res;
+}
+
+static inline bool Result[T, E]..is_ok(*self) {
+    return self->passing;
+}
+
+static inline bool Result[T, E]..is_err(*self) {
+    return !self->passing;
+}
+
+static inline T Result[T, E]..unwrap(self) {
+    if (self..is_err()) {
+        @panic("found err during Result[T, E]..unwrap()");
+    }
+    return self.as.ok;
+}
+
+static inline T Result[T, E]..unwrap_err(self) {
+    if (self..is_ok()) {
+        @panic("found ok during Result[T, E]..unwrap_err()");
+    }
+    return self.as.err;
+}
+
+#export { ok, err }
+#export { Result, Result..unwrap, Result..unwrap_err }
+
+#tests
+
+#include <assert.h>
+
+#test
+void general() {
+    Result[int, int] a = ok(10);
+    assert(!a..is_err());
+    assert(a..unwrap() == 10);
+
+    Result[int, int] b = err(69);
+    assert(b..unwrap_err() == 69);
+}
+
+#endtests

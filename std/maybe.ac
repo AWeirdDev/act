@@ -1,5 +1,7 @@
 #include <stdbool.h>
 
+#import std::panic { panic }
+
 #meta either tag=present target=value empty=false
 #meta privateconstruct
 typedef struct {
@@ -28,6 +30,9 @@ static inline bool Maybe[T]..is_none(*self) {
 }
 
 static inline T Maybe[T]..unwrap(self) {
+    if (self..is_none()) {
+        @panic("found none during Maybe[T]..unwrap()");
+    }
     return self.value;
 }
 

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 
+#import std::str { str }
 #import std::panic { panic }
 
 #import "./allocator" { Allocator }
@@ -10,7 +11,7 @@ static void *ga_alloc(Layout layout) {
     size_t size = (layout.size + align - 1) / align * align;
     void* allocated = aligned_alloc(align, size);
     if (allocated == NULL) {
-        panic();
+        @panic("failed to allocate");
     }
     return allocated;
 }
@@ -28,7 +29,7 @@ static void *ga_realloc(void *ptr, Layout _old_layout, Layout new_layout) {
 /// The process-wide default allocator.
 Allocator DEFAULT_GLOBAL_ALLOCATOR = general_allocator();
 
-/// A general-purpose allocator.
+/// A general(-purpose) allocator.
 ///
 /// Under the hood, it utilies the memory allocation methods
 /// defined in `stdlib.h`, specifically `malloc()`, `free()`,

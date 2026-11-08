@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void panic() {
-    fprintf(stderr, c"program panicked!\n");
+@macro panic($message) {
+    fprintf(stderr, c"program panicked: ");
+    fwrite($message.ptr, sizeof(*$message.ptr), $message.len, stderr);
+    fprintf(stderr, c"\n");
     exit(-1);
 }
 
