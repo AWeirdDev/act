@@ -1,0 +1,28 @@
+#include <stdbool.h>
+
+#foreign
+
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+    #include <fcntl.h>
+#endif
+
+#endforeign
+
+/// Used for some file attributes (e.g., file mode).
+/// It is an integer type.
+#extern mode_t mode_t
+
+typedef struct {
+    // generic
+    bool read;
+    bool write;
+    bool append;
+    bool truncate;
+    bool create;
+    bool create_new;
+
+    // system-specific
+    mode_t mode;
+} OpenOptions;
+
+#export { OpenOptions }
