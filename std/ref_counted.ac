@@ -1,0 +1,134 @@
+#import std::alloc { Layout, Allocator, align_of }
+#import std::maybe { Maybe, some, none }
+
+@macro layoutof($ty) {
+    (Layout){
+        .size = sizeof($ty),
+        .align = @align_of($ty)
+    }
+}
+
+typedef struct {
+  T data;
+  size_t weak_count;
+  size_t strong_count;
+} Block[T];
+
+static Block[T] *block_new<alloc>(T data) {
+    Block[T] *ptr = alloc..allocate(@layoutof(Block[T]));
+    *ptr = (Block[T]){ .data = data, 0 };
+    return ptr;
+}
+
+static inline void block_destroy<alloc>(Block[T] *block) {
+    alloc..deallocate(block, @layoutof(Block[T]));
+}
+
+// RefCounted ==
+
+#meta privateconstruct
+typedef struct {
+  Block[T] *block;
+} RefCounted[T];
+
+static inline RefCounted[T] ref_counted_new<alloc>(T data) {
+    Block[T] *block = block_new<alloc>(data);
+    block->strong_count += 1;
+    RefCounted[T] rc = { block };
+    return move(rc);
+}
+
+static inline RefCounted[T] ref_counted_new_raw(Block[T] *block) {
+    RefCounted[T] rc = { block };
+    return move(rc);
+}
+
+static inline RefCounted[T] RefCounted[T]..copy(*self) {
+    self->block->strong_count += 1;
+    RefCounted[T] rf = { .block = self->block };
+    return move(rf);
+}
+
+static inline const T* RefCounted[T]..ptr(*self) {
+    return &self->block->data;
+}
+
+static inline T* RefCounted[T]..mutable_ptr(*self) {
+    return &self->block->data;
+}
+
+static inline size_t RefCounted[T]..strong_count(*self) {
+    return self->block->strong_count;
+}
+
+static inline size_t RefCounted[T]..weak_count(*self) {
+    return self->block->weak_count;
+}
+
+static inline WeakRefCounted[T] RefCounted[T]..create_weak(*self) {
+    return weak_new_raw(self->block);
+}
+
+void RefCounted[T]..drop(*self) {
+    self->block->strong_count -= 1;
+    if (self->block->strong_count == 0) {
+        // T..drop();
+    }
+}
+
+#export { ref_counted_new }
+#export { RefCounted, RefCounted..copy, RefCounted..ptr, RefCounted..mutable_ptr }
+#export { RefCounted..strong_count, RefCounted..weak_count }
+#export { RefCounted..create_weak }
+
+// == RefCounted
+
+// WeakRefCounted ==
+
+#meta privateconstruct
+typedef struct {
+  Block[T] *block;
+} WeakRefCounted[T];
+
+WeakRefCounted[T] weak_new_raw<alloc>(Block[T] *block) {
+    WeakRefCounted[T] w = { block };
+    return move(w);
+}
+
+void WeakRefCounted[T]..drop<alloc: self>(*self) {
+    self->block->weak_count -= 1;
+    if (self->block->weak_count == 0) {
+        block_destroy<alloc>(self->block);
+    }
+}
+
+static inline Maybe[RefCounted[T]] WeakRefCounted[T]..upgrade(*self) {
+    if (self->block->strong_count == 0) {
+        return none();
+    }
+    return some(ref_counted_new_raw(self->block));
+}
+
+#export { WeakRefCounted, WeakRefCounted..upgrade }
+
+// == WeakRefCounted
+
+#tests
+
+#include <assert.h>
+
+#test
+void general() {
+    RefCounted[int] rc = ref_counted_new(10);
+    *rc..mutable_ptr() += 10;
+    assert(*rc..ptr() == 20);
+
+    RefCounted[int] rc2 = rc..copy();
+    assert(rc..strong_count() == 2);
+
+    rc..drop();
+
+    assert(rc2..strong_count() == 1);
+}
+
+#endtests

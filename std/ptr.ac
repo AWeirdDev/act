@@ -1,10 +1,15 @@
+#import std::panic { panic }
+
 #meta neverzero field=inner
 #meta privateconstruct
 typedef struct {
     T *inner;
 } NeverNull[T];
 
-NeverNull[T] nevernull_new_unchecked(T* ptr) {
+NeverNull[T] nevernull_new(T* ptr) {
+    if (ptr == NULL) {
+        @panic("found NULL at nevernull_new()")
+    }
     return { .inner = ptr };
 }
 
@@ -12,4 +17,4 @@ T NeverNull[T]..deref(*self) {
     return *self->inner;
 }
 
-#export { NeverNull, nevernull_new_unchecked }
+#export { NeverNull, nevernull_new }

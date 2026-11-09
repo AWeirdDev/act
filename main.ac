@@ -1,13 +1,8 @@
-#import std::alloc { Allocator, general_allocator }
-#import std::str { str_from_cstr }
-#import std::fs { File, file_open_readonly }
-#import std::io { println, IoResult }
-#import std::string { String }
+#import std::ref_counted { RefCounted, ref_counted_new }
+#import std::ref_counted { WeakRefCounted }
 
 int main() {
-    Allocator gpa = general_allocator();
-    File f = file_open_readonly("justfile");
-    String s = f..read_to_string<gpa>()..unwrap();
-    println("ok");
-    println(s..as_str());
+    RefCounted[int] rc = ref_counted_new(10);
+    WeakRefCounted[int] weak = rc..create_weak();
+    weak..upgrade()..unwrap();
 }

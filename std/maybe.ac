@@ -14,7 +14,8 @@ static inline Maybe[T] none() {
 }
 
 static inline Maybe[T] some(T value) {
-    return { .present = true, .value = value };
+    Maybe[T] res = { .present = true, .value = move(value) };
+    return move(res);
 }
 
 static inline Maybe[T*] Maybe[T]..as_referenced(*self) {
@@ -33,7 +34,7 @@ static inline T Maybe[T]..unwrap(self) {
     if (self..is_none()) {
         @panic("found none during Maybe[T]..unwrap()");
     }
-    return self.value;
+    return move(self.value);
 }
 
 #export { none, some }
