@@ -3,6 +3,7 @@
 #import "./allocator" { Allocator }
 #import "./ga" { general_allocator }
 #import "./layout" { Layout }
-#import "./utils" { align_of }
+#import "./utils" { align_of, layout_of }
 
-#export { Allocator, general_allocator, Layout, align_of }
+#export { Allocator, general_allocator, Layout }
+#export { align_of, layout_of }

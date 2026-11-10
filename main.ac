@@ -1,8 +1,9 @@
-#import std::ref_counted { RefCounted, ref_counted_new }
-#import std::ref_counted { WeakRefCounted }
+#import std::sync::ref_counted { RefCounted, ref_counted_new }
+#import std::sync::ref_counted { WeakRefCounted }
 
 int main() {
     RefCounted[int] rc = ref_counted_new(10);
     WeakRefCounted[int] weak = rc..create_weak();
-    weak..upgrade()..unwrap();
+    RefCounted[int] counted = weak..upgrade()..unwrap();
+    printf(c"Hello, %i\n", *counted..as_ptr());
 }

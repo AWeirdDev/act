@@ -15,4 +15,12 @@
     AC__ALIGN_OF_($T)
 }
 
-#export { align_of }
+/// Gets the layout of the given type `T`.
+@macro layout_of($ty) {
+    (Layout){
+        .size = sizeof($ty),
+        .align = @align_of($ty)
+    }
+}
+
+#export { align_of, layout_of }

@@ -1,7 +1,7 @@
 build:
     mkdir -p ./build
-    act ./main.ac --std ./std > ./build/main.c
-    cc ./build/main.c -o ./build/main
+    act ./main.ac --lib ./std > ./build/main.c
+    cc ./build/main.c -o ./build/main --std c11
 
 run: build
     ./build/main

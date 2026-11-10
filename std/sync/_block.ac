@@ -1,0 +1,22 @@
+#import std::alloc { Layout, Allocator, layout_of }
+
+#meta privateconstruct
+typedef struct {
+  T data;
+  Size_T weak_count;
+  Size_T strong_count;
+} Block[Size_T, T];
+
+/// Create a new block.
+static inline Block[Size_T, T] *block_new<alloc>(T data) {
+    Block[Size_T, T] *ptr = alloc..allocate(@layout_of(Block[Size_T, T]));
+    *ptr = (Block[Size_T, T]){ .data = data, 0 };
+    return ptr;
+}
+
+/// Destroys a block.
+static inline void block_destroy<alloc>(Block[Size_T, T] *block) {
+    alloc..deallocate(block, @layout_of(Block[Size_T, T]));
+}
+
+#export { Block, block_new, block_destroy }

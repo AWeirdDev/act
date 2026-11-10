@@ -1,0 +1,37 @@
+#include <stdatomic.h>
+
+#import "./_block" { Block, block_new, block_destroy }
+
+typedef Block[atomic_size_t, T] AtomicCountedBlock[T];
+
+#meta privateconstruct
+typedef struct {
+    AtomicCountedBlock[T] *block;
+} AtomicCounted[T];
+
+static inline AtomicCounted[T] atomic_counted_new<alloc>(T data) {
+    AtomicCountedBlock[T] *block = block_new<alloc>(data);
+    block->strong_count += 1;
+    AtomicCounted[T] ac = { block };
+    return move(ac);
+}
+
+static inline AtomicCounted[T] AtomicCounted[T]..copy<alloc>(*self) {
+    atomic_fetch_add_explicit(&self->block->strong_count, 1, memory_order_relaxed);
+    AtomicCounted[T] ac = { self->block };
+    return move(ac);
+}
+
+// FIXME: add ..drop() impl
+
+#tests
+
+#test
+void general() {
+    AtomicCounted[int] ac = atomic_counted_new(69);
+    ac..copy();
+    ac..copy();
+    ac..copy();
+}
+
+#endtests
