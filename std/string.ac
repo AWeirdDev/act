@@ -64,12 +64,19 @@ static inline size_t String..len(const *self) {
 }
 
 /// Gets the character at the given index, if exists.
-static inline Maybe[char] String..get(const *self, size_t index) {
+static inline Maybe[char] String..at(const *self, size_t index) {
     if (index >= self..len()) {
         return none();
     } else {
         return some(self->inner.items[index]);
     }
+}
+
+/// Gets a slice of the string.
+/// This is a shorthand method for `..as_str()..slice(start, end)`.
+static inline str String..slice(const *self, size_t start, size_t end) {
+    str s = self..as_str();
+    return s..slice(start, end);
 }
 
 /// Appends from a `str`.
@@ -112,7 +119,7 @@ static inline TempCString String..to_temp_cstring<alloc>(self) {
 
 #export { string_new, string_with_capacity, string_from_cstr, string_from_str }
 #export { String, String..reserve, String..append, String..append_str, String..pop }
-#export { String..get, String..copy, String..len }
+#export { String..at, String..copy, String..len }
 #export { String..as_str, String..as_ptr, String..as_mutable_ptr }
 #export { String..to_temp_cstring }
 
