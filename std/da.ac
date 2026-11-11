@@ -71,6 +71,14 @@ static inline void DynamicArray[T]..append<alloc: self>(*self, T item) {
     self->items[self->len++] = item;
 }
 
+static inline const T *DynamicArray[T]..as_ptr(*self) {
+    return self->items;
+}
+
+static inline T *DynamicArray[T]..as_mutable_ptr(*self) {
+    return self->items;
+}
+
 static inline Maybe[T] DynamicArray[T]..pop(*self) {
     if (self->len == 0) {
         return none();
@@ -90,6 +98,7 @@ void DynamicArray[T]..drop<alloc: self>(*self) {
 }
 
 #export { da_new, da_with_capacity }
+#export { DynamicArray..as_ptr, DynamicArray..as_mutable_ptr }
 #export { DynamicArray, DynamicArray..reserve, DynamicArray..append, DynamicArray..copy, DynamicArray..pop }
 
 #tests

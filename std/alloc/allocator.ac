@@ -6,7 +6,7 @@
 /// An allocator interface.
 ///
 /// This employs a vtable for dynamic dispatch. The runtime overhead is generally acceptable,
-/// and this approach is certainly better than 
+/// and this approach is certainly better than
 /// having to generate the same code for the same work just because of a different allocator.
 typedef struct {
     void *ctx;
@@ -38,7 +38,7 @@ static inline void* Allocator..reallocate(
         // default impl
         void* new_ptr = self..allocate(new_layout);
         memcpy(/* dst */ new_ptr, /* src */ previous, /* n */ old_layout.size);
-        self..deallocate(self->ctx, previous, old_layout);
+        self..deallocate(previous, old_layout);
         return new_ptr;
     }
 }

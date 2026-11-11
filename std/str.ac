@@ -2,13 +2,13 @@
 #include <string.h>
 
 #import std::maybe { Maybe, some, none }
+#import std::slice { Slice, slice_from_parts }
 
 /// A fat string pointer.
 ///
 /// This is also known as an immutable string slice.
 typedef struct {
-    size_t len;
-    const char *ptr;
+    const Slice[char] inner;
 } str;
 
 /// Create a `str` slice from a C-style string.
@@ -19,27 +19,30 @@ typedef struct {
 /// `cstr`.
 str str_from_cstr(const char* cstr) {
     size_t len = strlen(cstr);
-    return { .len = len, .ptr = cstr };
+    // FIXME:
+    // Technically, we should be optimizing this, otherwise
+    // the compiler might have no idea that this value, in fact,
+    // never changes.
+    return { slice_from_parts(len, (char*)cstr) };
+}
+
+str str_from_parts(size_t len, const char* ptr) {
+    // FIXME: same as above
+    return { slice_from_parts(len, (char*)ptr) };
+}
+
+const char* str..as_ptr(const *self) {
+    return self->inner..as_ptr();
 }
 
 /// Gets the length of the str slice.
-static inline size_t str..len(*self) {
-    return self->len;
+static inline size_t str..len(const *self) {
+    return self->inner..len();
 }
 
-str str..slice(*self, size_t start, size_t end) {
-    if (end > self->len) {
-        end = self->len;
-    }
-    if (start > end) {
-        start = end;
-    }
-
-    return (str){
-        .len = end - start,
-        .ptr = self->ptr + start
-    };
+str str..slice(const *self, size_t start, size_t end) {
+    return { self->inner..slice(start, end) };
 }
 
-#export { str_from_cstr }
-#export { str, str..slice }
+#export { str_from_cstr, str_from_parts }
+#export { str, str..slice, str..len, str..as_ptr }

@@ -2,8 +2,9 @@
 #include <stdlib.h>
 
 @macro panic($message) {
+    // FIXME
     fprintf(stderr, c"program panicked: ");
-    fwrite($message.ptr, sizeof(*$message.ptr), $message.len, stderr);
+    fwrite($message.inner.ptr, sizeof(*$message.inner.ptr), $message.inner.len, stderr);
     fprintf(stderr, c"\n");
     exit(-1);
 }

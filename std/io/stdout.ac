@@ -4,12 +4,12 @@
 
 /// Prints text to stdout.
 static inline void print(str text) {
-    fwrite(text.ptr, sizeof(*text.ptr), text.len, stdout);
+    fwrite(text..as_ptr(), sizeof(*text..as_ptr()), text..len(), stdout);
 }
 
 /// Prints text to stdout, with a new line character.
 static inline void println(str text) {
-    fwrite(text.ptr, sizeof(*text.ptr), text.len, stdout);
+    fwrite(text..as_ptr(), sizeof(*text..as_ptr()), text..len(), stdout);
     fputc('\n', stdout);
 }
 

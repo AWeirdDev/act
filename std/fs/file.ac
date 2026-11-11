@@ -84,3 +84,17 @@ void File..drop(*self) {
 
 #export { file_open_readonly }
 #export { File, File..read_to_string }
+
+#tests
+
+#include <assert.h>
+
+#test
+void hello() {
+    File file = file_open_readonly("justfile");
+
+    IoResult[String] result = file..read_to_string();
+    move(result)..unwrap();
+}
+
+#endtests

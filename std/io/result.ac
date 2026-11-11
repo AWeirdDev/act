@@ -1,5 +1,7 @@
 #import std::result { Result }
 
+/// An I/O result, typically with an integer as the error
+/// code.
 typedef Result[T, int] IoResult[T];
 
 #export { IoResult }

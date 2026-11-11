@@ -1,0 +1,48 @@
+#import std::iter { Iter }
+
+/// An array slice of type `T`.
+typedef struct {
+    size_t len;
+    T *ptr;
+} Slice[T];
+
+/// Creates a slice from a pointer to an array.
+static inline Slice[T] slice_from_array(T arr[]) {
+    return (Slice[T]){ .len = sizeof(arr) / sizeof(T), .ptr = arr };
+}
+
+static inline Slice[T] slice_from_parts(size_t len, T *ptr) {
+    return (Slice[T]){ .len = len, .ptr = ptr };
+}
+
+static inline const T* Slice[T]..as_ptr(const *self) {
+    return self->ptr;
+}
+
+static inline T* Slice[T]..as_mutable_ptr(*self) {
+    return self->ptr;
+}
+
+/// Gets the length of the slice.
+static inline size_t Slice[T]..len(const *self) {
+    return self->len;
+}
+
+/// Gets a sliced view of the slice.
+Slice[T] Slice[T]..slice(const *self, size_t start, size_t end) {
+    if (end > self->len) {
+        end = self->len;
+    }
+    if (start > end) {
+        start = end;
+    }
+
+    return (Slice[T]){
+        .len = end - start,
+        .ptr = self->ptr + start
+    };
+}
+
+#export { slice_from_parts, slice_from_array }
+#export { Slice, Slice..len, Slice..slice }
+#export { Slice..as_ptr, Slice..as_mutable_ptr }

@@ -1,6 +1,6 @@
 #import std::alloc { Allocator }
 #import std::da { DynamicArray, da_new, da_with_capacity }
-#import std::str { str }
+#import std::str { str, str_from_parts }
 #import std::iter { Iter }
 #import std::maybe { Maybe, some, none }
 
@@ -37,9 +37,9 @@ static inline String string_from_cstr<alloc>(const char* cstr) {
 }
 
 static inline String string_from_str<alloc>(const str src) {
-    DynamicArray[char] da = da_with_capacity<alloc>(src.len);
-    memcpy(da.items, src.ptr, src.len);
-    da.len = src.len;
+    DynamicArray[char] da = da_with_capacity<alloc>(src..len());
+    memcpy(da.items, src..as_ptr(), src..len());
+    da.len = src..len();
     return (String){ .inner = move(da) };
 }
 
@@ -81,14 +81,14 @@ static inline str String..slice(const *self, size_t start, size_t end) {
 
 /// Appends from a `str`.
 static inline void String..append_str<alloc: self>(*self, str src) {
-    self->inner.len += src.len;
+    self->inner.len += src..len();
     self->inner..reserve(self->inner.len);
-    memcpy(self->inner.items, src.ptr, src.len);
+    memcpy(self->inner.items, src..as_ptr(), src..len());
 }
 
 /// Gets a `str` slice representation of this string.
 static inline str String..as_str(const *self) {
-    return (str){ .len = self->inner.len, .ptr = self->inner.items };
+    return str_from_parts(self->inner.len, self->inner.items);
 }
 
 /// Gets the underlying character pointer.
@@ -146,7 +146,7 @@ static inline const char* TempCString..as_cstr(const *self) {
 /// However, the null byte is not part of the slice.
 static inline str TempCString..as_str(const *self) {
     str s = self->src..as_str();
-    return (str){ .len = s.len - 1, .ptr = s.ptr - 1 };
+    return str_from_parts(s..len() - 1, s..as_ptr());
 }
 
 /// Converts this temporary C-style string back to an
