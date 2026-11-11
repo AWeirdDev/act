@@ -5,21 +5,24 @@
 
 /// An allocator interface.
 ///
-/// This employs a vtable for dynamic dispatch.
+/// This employs a vtable for dynamic dispatch. The runtime overhead is generally acceptable,
+/// and this approach is certainly better than 
+/// having to generate the same code for the same work just because of a different allocator.
 typedef struct {
-    void* (*__alloc)(Layout layout);
-    void (*__dealloc)(void *ptr, Layout old_layout);
-    void* (*__realloc)(void *ptr, Layout old_layout, Layout new_layout);
+    void *ctx;
+    void *(*__alloc)(void *ctx, Layout layout);
+    void (*__dealloc)(void *ctx, void *ptr, Layout old_layout);
+    void *(*__realloc)(void *ctx, void *ptr, Layout old_layout, Layout new_layout);
 } Allocator;
 
 /// Allocates memory with the specified layout.
 static inline void* Allocator..allocate(*self, Layout layout) {
-    return self->__alloc(layout);
+    return self->__alloc(self->ctx, layout);
 }
 
 /// Deallocates memory.
 static inline void Allocator..deallocate(*self, void *ptr, Layout old_layout) {
-    return self->__dealloc(ptr, old_layout);
+    return self->__dealloc(self->ctx, ptr, old_layout);
 }
 
 /// Reallocates memory.
@@ -30,12 +33,12 @@ static inline void* Allocator..reallocate(
     Layout new_layout
 ) {
     if (self->__realloc != NULL) {
-        return self->__realloc(previous, old_layout, new_layout);
+        return self->__realloc(self->ctx, previous, old_layout, new_layout);
     } else {
         // default impl
         void* new_ptr = self..allocate(new_layout);
         memcpy(/* dst */ new_ptr, /* src */ previous, /* n */ old_layout.size);
-        self..deallocate(previous, old_layout);
+        self..deallocate(self->ctx, previous, old_layout);
         return new_ptr;
     }
 }
