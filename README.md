@@ -227,8 +227,8 @@ Additionally, you can also use transpiler directives specifically for the test c
 
 #test
 void general() {
-    str a = "hello, world!";
-    assert(a.len == a..len());
+    str a = "123";
+    assert(a..len() == 3);
 }
 
 #endtests

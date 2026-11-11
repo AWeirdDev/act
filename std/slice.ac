@@ -4,45 +4,84 @@
 typedef struct {
     size_t len;
     T *ptr;
+} MutableSlice[T];
+
+/// An array slice of type `T`, with the underlying
+/// data immutable.
+typedef struct {
+    size_t len;
+    const T *ptr;
 } Slice[T];
 
-/// Creates a slice from a pointer to an array.
-static inline Slice[T] slice_from_array(T arr[]) {
-    return (Slice[T]){ .len = sizeof(arr) / sizeof(T), .ptr = arr };
+#export { MutableSlice, Slice }
+
+/// Creates a mutable slice from a pointer to an array.
+static inline MutableSlice[T] mutable_slice_from_array(T arr[]) {
+    return { .len = sizeof(arr) / sizeof(T), .ptr = arr };
+}
+/// Creates a immutable slice from a pointer to an array.
+static inline Slice[T] slice_from_array(const T arr[]) {
+    return { .len = sizeof(arr) / sizeof(T), .ptr = arr };
 }
 
-static inline Slice[T] slice_from_parts(size_t len, T *ptr) {
-    return (Slice[T]){ .len = len, .ptr = ptr };
+#export { mutable_slice_from_array, slice_from_array }
+
+static inline MutableSlice[T] mutable_slice_from_parts(size_t len, T *ptr) {
+    return { .len = len, .ptr = ptr };
+}
+static inline Slice[T] slice_from_parts(size_t len, const T *ptr) {
+    return { .len = len, .ptr = ptr };
 }
 
+#export { mutable_slice_from_parts, slice_from_parts }
+
+static inline const T* MutableSlice[T]..as_ptr(const *self) {
+    return self->ptr;
+}
 static inline const T* Slice[T]..as_ptr(const *self) {
     return self->ptr;
 }
 
-static inline T* Slice[T]..as_mutable_ptr(*self) {
+#export { MutableSlice..as_ptr, Slice..as_ptr }
+
+static inline T* MutableSlice[T]..as_mutable_ptr(*self) {
     return self->ptr;
 }
 
+#export { MutableSlice..as_mutable_ptr }
+
+/// Gets the length of the slice.
+static inline size_t MutableSlice[T]..len(const *self) {
+    return self->len;
+}
 /// Gets the length of the slice.
 static inline size_t Slice[T]..len(const *self) {
     return self->len;
 }
 
-/// Gets a sliced view of the slice.
-Slice[T] Slice[T]..slice(const *self, size_t start, size_t end) {
-    if (end > self->len) {
-        end = self->len;
+#export { MutableSlice..len, Slice..len }
+
+@macro slice_impl($self, $start, $end) {
+    if ($end > $self->len) {
+        $end = $self->len;
     }
-    if (start > end) {
-        start = end;
+    if ($start > $end) {
+        $start = $end;
     }
 
-    return (Slice[T]){
-        .len = end - start,
-        .ptr = self->ptr + start
+    return {
+        .len = $end - $start,
+        .ptr = $self->ptr + $start
     };
 }
 
-#export { slice_from_parts, slice_from_array }
-#export { Slice, Slice..len, Slice..slice }
-#export { Slice..as_ptr, Slice..as_mutable_ptr }
+/// Gets a sliced view of the slice.
+MutableSlice[T] MutableSlice[T]..slice(*self, size_t start, size_t end) {
+    @slice_impl(self, start, end)
+}
+/// Gets a sliced view of the slice.
+Slice[T] Slice[T]..slice(const *self, size_t start, size_t end) {
+    @slice_impl(self, start, end)
+}
+
+#export { MutableSlice..slice, Slice..slice }

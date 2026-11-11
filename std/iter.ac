@@ -26,3 +26,15 @@ Maybe[Pair[size_t, T]] (Iter[Pair[size_t, T]])EnumerateIter[I, T]..next(*self) {
 }
 
 #export { Iter, EnumerateIter }
+
+#tests
+
+#import std::string { String, string_from_str }
+
+#test
+void general() {
+    String hello = string_from_str("world");
+    hello..iter()..enumerate();
+}
+
+#endtests

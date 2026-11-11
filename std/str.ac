@@ -8,7 +8,7 @@
 ///
 /// This is also known as an immutable string slice.
 typedef struct {
-    const Slice[char] inner;
+    Slice[char] inner;
 } str;
 
 /// Create a `str` slice from a C-style string.
@@ -19,16 +19,12 @@ typedef struct {
 /// `cstr`.
 str str_from_cstr(const char* cstr) {
     size_t len = strlen(cstr);
-    // FIXME:
-    // Technically, we should be optimizing this, otherwise
-    // the compiler might have no idea that this value, in fact,
-    // never changes.
-    return { slice_from_parts(len, (char*)cstr) };
+    return { slice_from_parts(len, cstr) };
 }
 
 str str_from_parts(size_t len, const char* ptr) {
     // FIXME: same as above
-    return { slice_from_parts(len, (char*)ptr) };
+    return { slice_from_parts(len, ptr) };
 }
 
 const char* str..as_ptr(const *self) {

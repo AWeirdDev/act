@@ -7,6 +7,7 @@
 #import "./layout" { Layout }
 
 static void *ga_alloc(void *ctx, Layout layout) {
+    (void)ctx;
     size_t align = layout.align < sizeof(void*) ? sizeof(void*) : layout.align;
     size_t size = (layout.size + align - 1) / align * align;
     void* allocated = aligned_alloc(align, size);
@@ -16,13 +17,15 @@ static void *ga_alloc(void *ctx, Layout layout) {
     return allocated;
 }
 
-static void ga_dealloc(void *ctx, void *ptr, Layout _old_layout) {
-    (void)_old_layout;
+static void ga_dealloc(void *ctx, void *ptr, Layout old_layout) {
+    (void)old_layout;
+    (void)ctx;
     free(ptr);
 }
 
-static void *ga_realloc(void *ctx, void *ptr, Layout _old_layout, Layout new_layout) {
-    (void)_old_layout;
+static void *ga_realloc(void *ctx, void *ptr, Layout old_layout, Layout new_layout) {
+    (void)old_layout;
+    (void)ctx;
     return realloc(ptr, new_layout.size);
 }
 
