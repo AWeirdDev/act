@@ -6,7 +6,7 @@
 #import "./allocator" { Allocator }
 #import "./layout" { Layout }
 
-static void *ga_alloc(Layout layout) {
+static void *ga_alloc(void *ctx, Layout layout) {
     size_t align = layout.align < sizeof(void*) ? sizeof(void*) : layout.align;
     size_t size = (layout.size + align - 1) / align * align;
     void* allocated = aligned_alloc(align, size);
@@ -16,12 +16,12 @@ static void *ga_alloc(Layout layout) {
     return allocated;
 }
 
-static void ga_dealloc(void *ptr, Layout _old_layout) {
+static void ga_dealloc(void *ctx, void *ptr, Layout _old_layout) {
     (void)_old_layout;
     free(ptr);
 }
 
-static void *ga_realloc(void *ptr, Layout _old_layout, Layout new_layout) {
+static void *ga_realloc(void *ctx, void *ptr, Layout _old_layout, Layout new_layout) {
     (void)_old_layout;
     return realloc(ptr, new_layout.size);
 }
@@ -37,18 +37,17 @@ Allocator DEFAULT_GLOBAL_ALLOCATOR = general_allocator();
 ///
 /// Example:
 /// ```ac
-/// #import std::alloc { Allocator, Layout, align_of }
+/// #import std::alloc { Allocator, layout_of }
 ///
 /// // "gpa" for "general-purpose allocator"
 /// Allocator gpa = general_allocator();
 ///
 /// // allocate for one int
-/// gpa.allocate(
-///     (Layout){ .size = 1 * sizeof(int), .align = @align_of(int) }
-///  );
+/// gpa.allocate(@layout_of(int));
 /// ```
 static inline Allocator general_allocator() {
     return (Allocator){
+        .ctx = NULL,
         .__alloc = ga_alloc,
         .__dealloc = ga_dealloc,
         .__realloc = ga_realloc
@@ -59,12 +58,12 @@ static inline Allocator general_allocator() {
 
 #tests
 
-#import "./utils" { align_of }
+#import "./utils" { layout_of }
 
 #test
 void gpa() {
     Allocator gpa = general_allocator();
-    Layout layout = { .size = sizeof(int), .align = @align_of(int) };
+    Layout layout = @layout_of(int);
     int *loc = gpa..allocate(layout);
     *loc = 69420;
     gpa..deallocate(loc, layout);
