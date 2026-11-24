@@ -5,39 +5,68 @@
 #import std::maybe { Maybe, some, none }
 #import std::panic { panic }
 
+/// A dynamic array (da), also known as a vector (vec).
+///
+/// A general dynamic array doesn't necessarily know how much memory
+/// it needs at compile time, so you'll need an allocator for heap memory.
+/// See `std::alloc` for more information.
+///
+/// ## Usage
+/// To get started quickly, it's recommended to use a general-purpose allocator
+/// (gpa) for heap allocations:
+///
+/// ```ac
+/// #include <assert.h>
+///
+/// #import std::alloc { Allocator, general_allocator }
+///
+/// Allocator alloc = general_allocator();
+///
+/// DynamicArray[int] arr = da_new<alloc>();
+///
+/// arr..append(69);
+/// arr..append(67);
+///
+/// assert(arr..len() == 2);
+/// assert(arr..len() == 2);
+/// ```
+#export
 typedef struct {
     size_t len;
     size_t capacity;
     T *items;
 } DynamicArray[T];
 
-static inline DynamicArray[T] da_new<alloc>() {
+#export
+/// Creates a new dynamic array.
+///
+/// ## Optional parameters
+/// - `.capacity`: The *least* capacity to reserve. The unit is `T`.
+static inline DynamicArray[T] da_new<alloc>(size_t .capacity) {
     DynamicArray[T] arr = { 0 };
+    if (capacity) {
+        arr..reserve(capacity);
+    }
     return move(arr);
 }
 
+/// Gets the length of the array.
+#export
 static inline size_t DynamicArray[T]..len(*self) {
     return self->len;
 }
 
+/// Gets the capacity of the array.
+#export
 static inline size_t DynamicArray[T]..capacity(*self) {
     return self->capacity;
 }
 
-/// Allocates a dynamic array with *at least* a capacity of the
-/// provided `capacity`.
-///
-/// The unit is `T`.
-static inline DynamicArray[T] da_with_capacity<alloc>(size_t capacity) {
-    DynamicArray[T] arr = da_new<alloc>();
-    arr..reserve(capacity);
-    return move(arr);
-}
-
-static inline Layout DynamicArray[T]..current_layout(const *self) {
+static inline Layout DynamicArray[T]..layout(const *self) {
     return { .size = sizeof(T) * self->capacity, .align = @align_of(T) };
 }
 
+#export
 static void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
     if (capacity < self->capacity) {
         @panic("DynamicArray[T]: reserve() with less capacity than current capacity");
@@ -64,21 +93,41 @@ static void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
     return;
 }
 
-static inline void DynamicArray[T]..append<alloc: self>(*self, T item) {
+/// Appends an item to the array. Some might refer to this as `push()`.
+///
+/// This function might reallocate, depending on whether the required
+/// storage space is available.
+#export
+static void DynamicArray[T]..append<alloc: self>(*self, T item) {
     if (self->len + 1 > self->capacity) {
         self..reserve(self->len + 1);
     }
     self->items[self->len++] = item;
 }
 
-static inline const T *DynamicArray[T]..as_ptr(*self) {
+/// Gets an immutable pointer to the array.
+#export
+static inline const T* DynamicArray[T]..as_ptr(const *self) {
     return self->items;
 }
 
-static inline T *DynamicArray[T]..as_mutable_ptr(*self) {
+/// Gets a mutable pointer to the array.
+#export
+static inline T* DynamicArray[T]..as_mut_ptr(*self) {
     return self->items;
 }
 
+/// Gets an item from the array.
+#export
+static inline T* DynamicArray[T]..get(const *self, size_t index) {
+    if (index >= self..len()) {
+        @panic("index out of range");
+    }
+    return self..as_ptr() + index;
+}
+
+/// Pops the last item off the array.
+#export
 static inline Maybe[T] DynamicArray[T]..pop(*self) {
     if (self->len == 0) {
         return none();
@@ -86,7 +135,19 @@ static inline Maybe[T] DynamicArray[T]..pop(*self) {
     return some(self->items[--self->len]);
 }
 
-static inline DynamicArray[T] DynamicArray[T]..copy<alloc>(const *self) {
+/// Clears the array.
+///
+/// This function does not deallocate memory. It only sets the
+/// length to `0`. Accessing elements at this point would be reading
+/// garbage data.
+#export
+static inline void DynamicArray[T]..clear(*self) {
+    self->len = 0;
+}
+
+/// Copies the dynamic array into a new array.
+#export
+static DynamicArray[T] DynamicArray[T]..copy<alloc>(const *self) {
     T *ptr = alloc..allocate((Layout){ .size = self->capacity, .align = @align_of(T) });
     memcpy(ptr, self->items, self->len);
     DynamicArray[T] new = { .len = self->len, .capacity = self->capacity, .items = ptr };
@@ -94,29 +155,23 @@ static inline DynamicArray[T] DynamicArray[T]..copy<alloc>(const *self) {
 }
 
 void DynamicArray[T]..drop<alloc: self>(*self) {
-    alloc..deallocate(self->items, self..current_layout());
+    alloc..deallocate(self->items, self..layout());
 }
-
-#export { da_new, da_with_capacity }
-#export { DynamicArray..as_ptr, DynamicArray..as_mutable_ptr }
-#export { DynamicArray, DynamicArray..reserve, DynamicArray..append, DynamicArray..copy, DynamicArray..pop }
 
 #tests
+    #include <assert.h>
+    #import std::alloc { Allocator, general_allocator }
 
-#include <assert.h>
-#import std::alloc { Allocator, general_allocator }
-
-#test
-void general() {
-    Allocator gpa = general_allocator();
-    DynamicArray[int] a = da_new<gpa>();
-    for (int i = 0; i < 100; i++) {
-        a..append(10);
+    #test
+    void general() {
+        Allocator gpa = general_allocator();
+        DynamicArray[int] a = da_new<gpa>(.capacity = (size_t)10);
+        for (int i = 0; i < 100; i++) {
+            a..append(10);
+        }
+        for (int i = 0; i < 50; i++) {
+            a..pop();
+        }
+        assert(a..len() == 50);
     }
-    for (int i = 0; i < 50; i++) {
-        a..pop();
-    }
-    assert(a..len() == 50);
-}
-
 #endtests

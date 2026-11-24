@@ -1,10 +1,16 @@
-build:
+init:
     mkdir -p ./build
-    act ./main.ac --lib ./std > ./build/main.c
+    cp -r ./vendor ./build/
+
+build:
+    act ./main.ac --std ./std --declare-feature debug --feature debug > ./build/main.c
     cc ./build/main.c -o ./build/main --std c11 -Wextra -Wall -Wno-unused-function
 
 run: build
     ./build/main
 
 test NAME:
-    act test ./std/{{ NAME }}.ac --std ./std
+    act test ./std/{{ NAME }}.ac --std ./std  --declare-feature debug --feature debug
+
+check NAME:
+    act check ./std/{{ NAME }}.ac --std ./std --declare-feature debug --feature debug

@@ -1,0 +1,64 @@
+#include <stddef.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <errno.h>
+
+#import std::panic { panic }
+#import std::maybe { Maybe, some, none }
+#import std::intrinsics::primitives { SIZE_MAX }
+#import std::optimized { never0_size }
+
+/// From `<unistd.h>`
+#extern sysconf
+long sysconf(int);
+
+static inline long get_page_size() {
+    return sysconf(_SC_PAGESIZE);
+}
+
+static size_t get_limit(size_t n_pages) {
+    long page_size = get_page_size();
+    if (page_size <= 0 || (size_t)page_size > SIZE_MAX / n_pages) {
+        @panic("page_size * 256 overflows");
+    }
+    return (size_t)page_size * n_pages;
+}
+
+/// Reserve address. None of this range will be readable/writable, however.
+unsigned char* reserve(size_t limit) {
+    unsigned char* base = mmap(NULL, limit, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (base == MAP_FAILED) {
+        printf(c"%i", errno);
+        @panic("mmap failed");
+    }
+    return base;
+}
+
+typedef struct {
+    unsigned char* base;
+    size_t limit;
+    size_t top;
+    size_t accessible;
+} VirtBump;
+
+VirtBump virt_bump_new(size_t .bytes) {
+    size_t pages = bytes ? bytes / get_page_size() : 256;
+    unsigned char* base = reserve(limit);
+    VirtBump res = { base, limit, 0 };
+    return move(res);
+}
+
+VirtBump virt_bump_new_pages(size_t .n_pages) {
+    size_t pages = n_pages ? n_pages : 256;
+    size_t limit = get_limit(pages);
+    unsigned char* base = reserve(limit);
+    VirtBump res = { base, limit, 0 };
+    return move(res);
+}
+
+void VirtBump..drop(*self) {
+    if (munmap(self->base, self->limit) != 0) {
+        @panic("VirtBump: munmap() failed");
+    }
+}

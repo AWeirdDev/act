@@ -1,11 +1,53 @@
+#include <stddef.h>
+
+#import std::panic { panic }
+
 @macro make($ty $name) {
     #meta neverzero field=inner
     typedef struct {
         $ty inner;
     } $name;
+
+    static inline $name $name##_new_unchecked($ty inner) {
+        $name res = { inner };
+        return res;
+    }
+
+    static inline $ty $name..get(const *self) {
+        return self->inner;
+    }
 }
 
-@make(int neverzero_int)
-@make(size_t neverzero_size_t)
+@make(int never0_int)
+#export { never0_int, never0_int_new_unchecked }
+#export { never0_int..get }
 
-#export { neverzero_int, neverzero_size_t }
+@make(size_t never0_size)
+#export { never0_size, never0_size_new_unchecked }
+#export { never0_size..get }
+
+@make(long never0_long)
+#export { never0_long, never0_long_new_unchecked }
+#export { never0_long..get }
+
+// ptr ==
+
+#meta neverzero field=inner
+typedef struct {
+    T *inner;
+} nevernull[T];
+
+static inline nevernull[T] nevernull_new(T* ptr) {
+    if (ptr == NULL) {
+        @panic("found NULL at nevernull_new()")
+    }
+    return { .inner = ptr };
+}
+
+static inline T nevernull[T]..get(*self) {
+    return self->inner;
+}
+
+#export { nevernull, nevernull..get, nevernull_new }
+
+// == ptr

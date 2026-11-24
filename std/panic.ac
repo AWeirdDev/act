@@ -1,12 +1,62 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-@macro panic($message) {
-    // FIXME
-    fprintf(stderr, c"program panicked: ");
+#import std::str { str }
+
+@macro _write_message($message) {
     fwrite($message.inner.ptr, sizeof(*$message.inner.ptr), $message.inner.len, stderr);
+}
+
+#guard feature(debug)
+    @macro _debug_info() {
+        fprintf(stderr, c"\tat ");
+        @_write_message(__AC_FILE__);
+        fprintf(stderr, c":%i\n", __AC_LINE__);
+    }
+#else
+    @macro _debug_info() {}
+#endguard
+
+/// Panics, forcing the program to exit.
+///
+/// ```ac
+/// @panic(str message);
+/// ```
+///
+/// You'll need `std::str { str }`.
+///
+/// # Example
+/// ```ac
+/// @panic("Oh, no!");
+/// ```
+///
+/// Example error output:
+/// ```console
+/// program panicked: oh, no!
+/// 	at /main.ac:4
+/// ```
+#export
+@macro panic($message) {
+    fprintf(stderr, c"program panicked: ");
+    @_write_message($message);
     fprintf(stderr, c"\n");
+    @_debug_info();
     exit(-1);
 }
 
-#export { panic }
+#export
+@macro todo($message) {
+    fprintf(stderr, c"todo: ");
+    @_write_message($message);
+    fprintf(stderr, c"\n");
+    @_debug_info();
+    exit(-1);
+}
+
+
+// #export
+// @macro assert($expr) {
+//     if (!($expr)) {
+//         fprintf(stderr, c"assert: ");
+//     }
+// }

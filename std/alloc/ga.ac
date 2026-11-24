@@ -30,6 +30,7 @@ static void *ga_realloc(void *ctx, void *ptr, Layout old_layout, Layout new_layo
 }
 
 /// The process-wide default allocator.
+#export
 Allocator DEFAULT_GLOBAL_ALLOCATOR = general_allocator();
 
 /// A general(-purpose) allocator.
@@ -48,6 +49,7 @@ Allocator DEFAULT_GLOBAL_ALLOCATOR = general_allocator();
 /// // allocate for one int
 /// gpa.allocate(@layout_of(int));
 /// ```
+#export
 static inline Allocator general_allocator() {
     return (Allocator){
         .ctx = NULL,
@@ -56,8 +58,6 @@ static inline Allocator general_allocator() {
         .__realloc = ga_realloc
     };
 }
-
-#export { general_allocator, DEFAULT_GLOBAL_ALLOCATOR }
 
 #tests
 

@@ -8,6 +8,23 @@
 /// This employs a vtable for dynamic dispatch. The runtime overhead is generally acceptable,
 /// and this approach is certainly better than
 /// having to generate the same code for the same work just because of a different allocator.
+///
+/// If you're looking for a general allocator like `malloc()`, you should just use
+/// `std::alloc { general_allocator }`.
+///
+/// ## Initialization
+/// ```ac
+/// Allocator alloc = {
+///     .ctx = NULL, // allocator context pointer (if any)
+///     .__alloc = alloc_fn,
+///     .__dealloc = deallocate_fn,
+///     .__realloc = reallocate_fn
+/// };
+/// ```
+///
+/// Note the two underscores (`__`), so as to differentiate from
+/// receivers.
+#export
 typedef struct {
     void *ctx;
     void *(*__alloc)(void *ctx, Layout layout);
@@ -16,16 +33,19 @@ typedef struct {
 } Allocator;
 
 /// Allocates memory with the specified layout.
+#export
 static inline void* Allocator..allocate(*self, Layout layout) {
     return self->__alloc(self->ctx, layout);
 }
 
 /// Deallocates memory.
+#export
 static inline void Allocator..deallocate(*self, void *ptr, Layout old_layout) {
     return self->__dealloc(self->ctx, ptr, old_layout);
 }
 
 /// Reallocates memory.
+#export
 static inline void* Allocator..reallocate(
     *self,
     void *previous,
@@ -42,5 +62,3 @@ static inline void* Allocator..reallocate(
         return new_ptr;
     }
 }
-
-#export { Allocator, Allocator..allocate, Allocator..deallocate, Allocator..reallocate }

@@ -1,0 +1,13 @@
+#import "./allocator" { Allocator }
+
+typedef struct {
+    size_t capacity;
+    size_t position;
+} Arena;
+
+static inline Arena arena_with_capacity(size_t capacity) {
+    return {
+        .capacity = capacity,
+        .position = 0
+    };
+}

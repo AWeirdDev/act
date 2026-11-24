@@ -3,6 +3,7 @@
 
 #import std::maybe { Maybe, some, none }
 #import std::slice { Slice, slice_from_parts }
+#import std::ops { Equal }
 
 /// A fat string pointer.
 ///
@@ -36,9 +37,38 @@ static inline size_t str..len(const *self) {
     return self->inner..len();
 }
 
+static inline char str..at(const *self, size_t index) {
+    Slice[char] inner = self->inner;
+    char result = *inner..at(index);
+    return result;
+}
+
 str str..slice(const *self, size_t start, size_t end) {
     return { self->inner..slice(start, end) };
 }
 
+/// Checks if two string slices match.
+bool (Equal)str..eq(const *self, const str *o) {
+    for (size_t i = 0; i < o..len(); i++) {
+        if (self..at(i) != o..at(i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 #export { str_from_cstr, str_from_parts }
 #export { str, str..slice, str..len, str..as_ptr }
+
+#tests
+
+#include <assert.h>
+
+#test
+void check_eq() {
+    str a = "I love cheese!";
+    str b = "I love cheese!";
+    assert(a..eq(&b));
+}
+
+#endtests

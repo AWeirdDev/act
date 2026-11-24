@@ -1,1 +1,9 @@
-// TODO: os paths
+#import std::string { String }
+
+typedef struct {
+    String buf;
+} Path;
+
+Path path_new() {
+
+}

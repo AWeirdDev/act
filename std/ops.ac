@@ -1,0 +1,29 @@
+#include <stdbool.h>
+
+/// Checks the equality between two items of the same type.
+#export
+interface Equal;
+
+bool Equal..eq(const *self, const Self *o);
+
+/// Comparison result.
+///
+/// For example, `Comparison.Less` would mean: **this**
+/// is **less than** the other one.
+#export
+typedef enum {
+    /// `<`
+    Less,
+
+    /// `==`
+    Equal,
+
+    /// `>`
+    Greater,
+} Comparison;
+
+/// Compare this and another instance of the current type.
+#export
+interface Compare;
+
+Comparison Compare..cmp(const *self, const Self *o);

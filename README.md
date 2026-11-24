@@ -1,3 +1,5 @@
+<img src="./assets/logo.png" align="right" width="120" />
+
 # aC(t)
 
 aC is a superset of C. It has a few additional features a modern programming language bears.

@@ -6,7 +6,12 @@
 /// This library should only be compiled with C11+.
 
 #foreign
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
-    #error aC only compiles with C11+.
-#endif
+    #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+        #error aC only compiles with C11+.
+    #endif
 #endforeign
+
+#export "./result"
+#export "./maybe"
+#export "./str"
+#export "./slice"

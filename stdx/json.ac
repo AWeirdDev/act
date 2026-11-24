@@ -1,0 +1,22 @@
+#import std::alloc { Allocator }
+#import std::string { String, StringIter }
+
+typedef struct {
+
+} JsonWriterOptions;
+
+typedef struct {
+    String buffer;
+} JsonWriter;
+
+JsonWriter json_writer_new<alloc>() {
+    String buffer = string_with_capacity(64);
+    JsonWriter writer = { move(buffer) };
+    return move(writer);
+}
+
+static inline void JsonWriter..object_begin<alloc: self>(*self) {
+    self->buffer..append('{');
+}
+
+static inline void JsonWriter..object_end() {}

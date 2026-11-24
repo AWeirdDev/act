@@ -1,9 +1,19 @@
-#import std::sync::ref_counted { RefCounted, ref_counted_new }
-#import std::sync::ref_counted { WeakRefCounted }
+#import std::str { str }
+#import std::string { String, string_new }
+#import std::panic { todo }
 
 int main() {
-    RefCounted[int] rc = ref_counted_new(10);
-    WeakRefCounted[int] weak = rc..create_weak();
-    RefCounted[int] counted = weak..upgrade()..unwrap();
-    printf(c"Hello, %i\n", *counted..as_ptr());
+    #run paste
+        #include <stdio.h>
+        printf(c"size_t i;\n");
+        for (size_t i = 0; i < 10; i++) {
+            printf(c"i = %zu;\n", i);
+            printf(c"printf(c\"%%zu\\n\", i);\n");
+        }
+    #endrun
+}
+
+int main2() {
+    String st = string_new();
+
 }

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 
 #import std::panic { panic }
+#import std::str { str }
 
 #meta maybe tag=present target=value empty=false
 #meta privateconstruct
@@ -18,9 +19,13 @@ static inline Maybe[T] some(T value) {
     return move(res);
 }
 
-static inline Maybe[T*] Maybe[T]..as_referenced(*self) {
-    return { .present = self->present, .value = &self->value };
-}
+// static inline Maybe[T*] Maybe[T]..as_referenced(*self) {
+//     if (self..is_none()) {
+//         return none();
+//     }
+//     // FIXME
+//     return some(&self->value);
+// }
 
 static inline bool Maybe[T]..is_some(*self) {
     return self->present;

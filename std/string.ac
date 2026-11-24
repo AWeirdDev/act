@@ -1,8 +1,12 @@
+#include <stddef.h>
+#include <stdbool.h>
+
 #import std::alloc { Allocator }
-#import std::da { DynamicArray, da_new, da_with_capacity }
+#import std::da { DynamicArray, da_new }
 #import std::str { str, str_from_parts }
 #import std::iter { Iter }
 #import std::maybe { Maybe, some, none }
+#import std::intrinsics::ops { Equal }
 
 // String ==
 
@@ -16,28 +20,21 @@ typedef struct {
 /// Unlike zero-initializing, this ensures that the given
 /// `<alloc>` (allocator) is attached to the instance of this
 /// string.
-static inline String string_new<alloc>() {
-    DynamicArray[char] da = da_new<alloc>();
-    return (String){ .inner = move(da) };
-}
-
-/// Creates a new `std::string { String }`, and allocates a capacity
-/// of at least `capacity` (unit: `char`).
-static inline String string_with_capacity<alloc>(size_t capacity) {
-    DynamicArray[char] da = da_with_capacity<alloc>(capacity);
+static inline String string_new<alloc>(size_t .capacity) {
+    DynamicArray[char] da = da_new<alloc>(.capacity = capacity);
     return (String){ .inner = move(da) };
 }
 
 static inline String string_from_cstr<alloc>(const char* cstr) {
     size_t len = strlen(cstr);
-    DynamicArray[char] da = da_with_capacity<alloc>(len);
+    DynamicArray[char] da = da_new<alloc>(.capacity = len);
     memcpy(da.items, cstr, len);
     da.len = len;
     return (String){ .inner = move(da) };
 }
 
 static inline String string_from_str<alloc>(const str src) {
-    DynamicArray[char] da = da_with_capacity<alloc>(src..len());
+    DynamicArray[char] da = da_new<alloc>(.capacity = src..len());
     memcpy(da.items, src..as_ptr(), src..len());
     da.len = src..len();
     return (String){ .inner = move(da) };
@@ -64,12 +61,17 @@ static inline size_t String..len(const *self) {
 }
 
 /// Gets the character at the given index, if exists.
-static inline Maybe[char] String..at(const *self, size_t index) {
+static inline Maybe[char] String..checked_at(const *self, size_t index) {
     if (index >= self..len()) {
         return none();
     } else {
         return some(self->inner.items[index]);
     }
+}
+
+/// Gets the character at the given index, if exists.
+static inline char String..at(const *self, size_t index) {
+    return self->inner.items[index];
 }
 
 /// Gets a slice of the string.
@@ -97,7 +99,7 @@ static inline const char* String..as_ptr(const *self) {
 }
 
 /// Gets the underlying character pointer, as mutable.
-static inline char* String..as_mutable_ptr(*self) {
+static inline char* String..as_mut_ptr(*self) {
     return self->inner.items;
 }
 
@@ -115,12 +117,16 @@ static inline TempCString String..to_temp_cstring<alloc>(self) {
     return move(res);
 }
 
-// static inline void
+bool (Equal)String..eq(const *self, const String* o) {
+    str me = self..as_str();
+    str other = o..as_str();
+    return me..eq(&other);
+}
 
-#export { string_new, string_with_capacity, string_from_cstr, string_from_str }
+#export { string_new, string_from_cstr, string_from_str }
 #export { String, String..reserve, String..append, String..append_str, String..pop }
-#export { String..at, String..copy, String..len }
-#export { String..as_str, String..as_ptr, String..as_mutable_ptr }
+#export { String..at, String..checked_at, String..copy, String..len }
+#export { String..as_str, String..as_ptr, String..as_mut_ptr }
 #export { String..to_temp_cstring }
 
 // == String
@@ -179,7 +185,7 @@ Maybe[char] (Iter[char])StringIter..next(*self) {
     if (self->counter >= self->len) {
         return none();
     }
-    return some(self->items[self->counter++]);
+    return some((char)self->items[self->counter++]);
 }
 
 #export { String..iter, StringIter }

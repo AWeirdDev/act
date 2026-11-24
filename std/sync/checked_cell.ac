@@ -1,0 +1,111 @@
+#include <stddef.h>
+#include <stdbool.h>
+
+#import std::maybe { Maybe, some, none }
+#import std::panic { panic }
+
+/// Runtime-enforced borrowing.
+typedef struct {
+    T data;
+
+    // < 0: mutably borrowed
+    // > 0: immutably borrowed
+    ssize_t counter;
+} CheckedCell[T];
+
+CheckedCell[T] checked_cell_new(T value) {
+    return { .data = value, .counter = 0 };
+}
+
+/// Checks if the data is currently borrowed mutably somewhere
+/// else. If so, you may not hold an immutable borrow to the data.
+static inline bool CheckedCell[T]..is_borrowed_mutably(const *self) {
+    return self->counter < 0;
+}
+
+/// Checks if the data is currently borrowed immutably somewhere
+/// else. If so, you may not borrow the data mutably.
+static inline bool CheckedCell[T]..is_borrowed_immutably(const *self) {
+    return self->counter > 0;
+}
+
+/// Attempts to borrow the data immutably. If the data is currently
+/// borrowed mutably somewhere else, a `none()` is returned.
+static inline Maybe[const T*] CheckedCell[T]..maybe_borrow(*self) {
+    if (self..is_borrowed_mutably()) {
+        return none();
+    }
+    self->counter += 1;
+    const T* borrowed = (&self->data);
+    return some(borrowed);
+}
+
+/// Attempts to borro the data immutably. If the data is currently
+/// borrowed mutably somewhere else, the program panics.
+///
+/// Consider using `..maybe_borrow` to avoid this behavior.
+static inline const T* CheckedCell[T]..borrow(*self) {
+    Maybe[const T*] data = self..maybe_borrow();
+    if (data..is_none()) {
+        @panic("CheckedCell[T]: data already borrowed mutably");
+    }
+    return data..unwrap();
+}
+
+/// Attempts to borrow the data mutably. If the data is currently
+/// borrowed immutably anywhere else, a `none()` is returned.
+static inline Maybe[T*] CheckedCell[T]..maybe_borrow_mut(*self) {
+    if (self..is_borrowed_immutably()) {
+        return none();
+    }
+    self->counter -= 1;
+    return some(&self->data);
+}
+
+/// Attempts to borrow the data mutably. If the data is currently
+/// borrowed immutably anywhere else, the program panics.
+///
+/// Consider using `..maybe_borrow_mut` to avoid this behavior.
+static inline T* CheckedCell[T]..borrow_mut(*self) {
+    Maybe[T*] data = self..maybe_borrow_mut();
+    if (data..is_none()) {
+        @panic("CheckedCell[T]: data borrowed immutably, cannot get mutable handle");
+    }
+    return data..unwrap();
+}
+
+#export { checked_cell_new, CheckedCell }
+#export { CheckedCell..borrow, CheckedCell..maybe_borrow }
+#export { CheckedCell..borrow_mut, CheckedCell..maybe_borrow_mut }
+
+@macro cell_ref_impl($ty, $inner) {
+    static inline $inner $ty..get(*self) {
+        return self->data;
+    }
+
+    void $ty..drop(*self) {
+        self->counter -= 1;
+    }
+}
+
+typedef struct {
+    const T *data;
+    ssize_t *counter;
+} CellRef[T];
+
+@cell_ref_impl(CellRef[T], const T*)
+
+typedef struct {
+    T *data;
+    ssize_t *counter;
+} CellMutRef[T];
+
+@cell_ref_impl(CellMutRef[T], T)
+
+#export { CellRef, CellMutRef }
+
+#test
+void general() {
+    CheckedCell[int] cell = checked_cell_new(69420);
+    cell..borrow();
+}

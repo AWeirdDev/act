@@ -1,0 +1,16 @@
+/// Kibibytes.
+static inline size_t kib(size_t n) {
+    return n << 10;
+}
+
+/// Mebibytes.
+static inline size_t mib(size_t n) {
+    return n << 20;
+}
+
+/// Gibibytes
+static inline size_t gib(size_t n) {
+    return n << 30;
+}
+
+#export { kib, mib, gib }

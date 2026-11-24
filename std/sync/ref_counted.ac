@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #import std::alloc { Layout, Allocator, layout_of }
 #import std::maybe { Maybe, some, none }
 
@@ -8,11 +10,13 @@ typedef Block[size_t, T] RefCountedBlock[T];
 // RefCounted ==
 
 /// Reference-counted.
+#export
 #meta privateconstruct
 typedef struct {
   RefCountedBlock[T] *block;
 } RefCounted[T];
 
+#export
 static inline RefCounted[T] ref_counted_new<alloc>(T data) {
     RefCountedBlock[T] *block = block_new<alloc>(data);
     block->strong_count += 1;
@@ -20,33 +24,40 @@ static inline RefCounted[T] ref_counted_new<alloc>(T data) {
     return move(rc);
 }
 
+#export
 static inline RefCounted[T] ref_counted_new_raw(RefCountedBlock[T] *block) {
     RefCounted[T] rc = { block };
     return move(rc);
 }
 
+#export
 static inline RefCounted[T] RefCounted[T]..copy(*self) {
     self->block->strong_count += 1;
     RefCounted[T] rf = { .block = self->block };
     return move(rf);
 }
 
+#export
 static inline const T* RefCounted[T]..as_ptr(*self) {
     return &self->block->data;
 }
 
-static inline T* RefCounted[T]..as_mutable_ptr(*self) {
+#export
+static inline T* RefCounted[T]..as_mut_ptr(*self) {
     return &self->block->data;
 }
 
+#export
 static inline size_t RefCounted[T]..strong_count(*self) {
     return self->block->strong_count;
 }
 
+#export
 static inline size_t RefCounted[T]..weak_count(*self) {
     return self->block->weak_count;
 }
 
+#export
 static inline WeakRefCounted[T] RefCounted[T]..create_weak(*self) {
     return weak_new_raw(self->block);
 }
@@ -62,23 +73,28 @@ void RefCounted[T]..drop(*self) {
     }
 }
 
-#export { ref_counted_new }
-#export { RefCounted, RefCounted..copy, RefCounted..as_ptr, RefCounted..as_mutable_ptr }
-#export { RefCounted..strong_count, RefCounted..weak_count }
-#export { RefCounted..create_weak }
-
 // == RefCounted
 
 // WeakRefCounted ==
 
+#export
 #meta privateconstruct
 typedef struct {
   RefCountedBlock[T] *block;
 } WeakRefCounted[T];
 
+#export
 WeakRefCounted[T] weak_new_raw<alloc>(RefCountedBlock[T] *block) {
     WeakRefCounted[T] w = { block };
     return move(w);
+}
+
+#export
+static inline Maybe[RefCounted[T]] WeakRefCounted[T]..upgrade(*self) {
+    if (self->block->strong_count == 0) {
+        return none();
+    }
+    return some(ref_counted_new_raw(self->block));
 }
 
 void WeakRefCounted[T]..drop<alloc: self>(*self) {
@@ -87,15 +103,6 @@ void WeakRefCounted[T]..drop<alloc: self>(*self) {
         block_destroy<alloc>(self->block);
     }
 }
-
-static inline Maybe[RefCounted[T]] WeakRefCounted[T]..upgrade(*self) {
-    if (self->block->strong_count == 0) {
-        return none();
-    }
-    return some(ref_counted_new_raw(self->block));
-}
-
-#export { WeakRefCounted, WeakRefCounted..upgrade }
 
 // == WeakRefCounted
 
@@ -106,7 +113,7 @@ static inline Maybe[RefCounted[T]] WeakRefCounted[T]..upgrade(*self) {
 #test
 void general() {
     RefCounted[int] rc = ref_counted_new(10);
-    *rc..as_mutable_ptr() += 10;
+    *rc..as_mut_ptr() += 10;
     assert(*rc..as_ptr() == 20);
 
     RefCounted[int] rc2 = rc..copy();

@@ -1,0 +1,8 @@
+#foreign
+    #define SIPHASH_IMPLEMENTATION
+    #include "vendor/siphash.h"
+#endforeign
+
+#extern siphash
+int c_siphash(const void* in, const size_t inlen, const void* k, uint8_t* out,
+const size_t outlen);

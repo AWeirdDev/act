@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
 #import std::str { str }
-#import std::string { TempCString, string_from_str, string_with_capacity }
+#import std::string { TempCString, string_from_str, string_new }
 #import std::panic { panic }
 #import std::alloc { Allocator }
 #import std::io { IoResult }
@@ -57,11 +57,11 @@ static File file_open_readonly(str path) {
 static IoResult[String] File..read_to_string<alloc>(*self) {
     enum { CHUNK_SIZE = 4096 };
 
-    String buf = string_with_capacity<alloc>(CHUNK_SIZE);
+    String buf = string_new<alloc>(.capacity = CHUNK_SIZE);
     size_t n_read;
 
     while ((
-        n_read = fread(buf..as_mutable_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
+        n_read = fread(buf..as_mut_ptr() + buf..len(), 1, CHUNK_SIZE, self->file),
         n_read > 0
     )) {
         buf..reserve(buf..len() + CHUNK_SIZE);
