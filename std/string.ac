@@ -6,7 +6,7 @@
 #import std::str { str, str_from_parts }
 #import std::iter { Iter }
 #import std::maybe { Maybe, some, none }
-#import std::intrinsics::ops { Equal }
+#import std::ops { Equal }
 
 // String ==
 
