@@ -1,4 +1,4 @@
-<img src="./assets/logo.png" align="right" width="120" />
+<img src="./assets/logo.png" width="120" />
 
 # aC(t)
 
