@@ -2,6 +2,7 @@
 #include <string.h>
 
 #import std::alloc { Layout, align_of }
+#import std::mem { forget, force_cast }
 #import std::maybe { Maybe, some, none }
 #import std::panic { panic }
 
@@ -12,7 +13,7 @@
 /// See `std::alloc` for more information.
 ///
 /// ## Usage
-/// To get started quickly, it's recommended to use a general-purpose allocator
+/// To get started quickly, it's recommended that you use a general-purpose allocator
 /// (gpa) for heap allocations:
 ///
 /// ```ac
@@ -22,7 +23,7 @@
 ///
 /// Allocator alloc = general_allocator();
 ///
-/// DynamicArray[int] arr = da_new<alloc>();
+/// Da[int] arr = da_new<alloc>();
 ///
 /// arr..append(69);
 /// arr..append(67);
@@ -35,15 +36,15 @@ typedef struct {
     size_t len;
     size_t capacity;
     T *items;
-} DynamicArray[T];
+} Da[T];
 
 #export
 /// Creates a new dynamic array.
 ///
 /// ## Optional parameters
 /// - `.capacity`: The *least* capacity to reserve. The unit is `T`.
-static inline DynamicArray[T] da_new<alloc>(size_t .capacity) {
-    DynamicArray[T] arr = { 0 };
+static inline Da[T] da_new<alloc>(size_t .capacity) {
+    Da[T] arr = { 0 };
     if (capacity) {
         arr..reserve(capacity);
     }
@@ -52,30 +53,29 @@ static inline DynamicArray[T] da_new<alloc>(size_t .capacity) {
 
 /// Gets the length of the array.
 #export
-static inline size_t DynamicArray[T]..len(*self) {
+static inline size_t Da[T]..len(const *self) {
     return self->len;
 }
 
 /// Gets the capacity of the array.
 #export
-static inline size_t DynamicArray[T]..capacity(*self) {
+static inline size_t Da[T]..capacity(*self) {
     return self->capacity;
 }
 
-static inline Layout DynamicArray[T]..layout(const *self) {
+/// The current layout details for the continuous block on the heap.
+#export
+static inline Layout Da[T]..layout(const *self) {
     return { .size = sizeof(T) * self->capacity, .align = @align_of(T) };
 }
 
 #export
-static void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
+static void Da[T]..reserve<alloc: self>(*self, size_t capacity) {
     if (capacity < self->capacity) {
-        @panic("DynamicArray[T]: reserve() with less capacity than current capacity");
+        @panic("Da[T]: reserve() with less capacity than current capacity");
     }
 
-    Layout old_layout = {
-        .size = self->items == NULL ? 0 : sizeof(T) * self->capacity,
-        .align = @align_of(T)
-    };
+    Layout old_layout = self..layout();
     if (self->capacity == 0) {
         self->capacity = 1;
     }
@@ -89,8 +89,6 @@ static void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
         old_layout,
         (Layout){ .size = sizeof(T) * self->capacity, .align = @align_of(T) }
     );
-
-    return;
 }
 
 /// Appends an item to the array. Some might refer to this as `push()`.
@@ -98,28 +96,31 @@ static void DynamicArray[T]..reserve<alloc: self>(*self, size_t capacity) {
 /// This function might reallocate, depending on whether the required
 /// storage space is available.
 #export
-static void DynamicArray[T]..append<alloc: self>(*self, T item) {
+static void Da[T]..append<alloc: self>(*self, T item) {
     if (self->len + 1 > self->capacity) {
         self..reserve(self->len + 1);
     }
-    self->items[self->len++] = item;
+
+    forget(item);
+    memcpy(&self->items[self->len], &item, sizeof(T));
+    self->len++;
 }
 
 /// Gets an immutable pointer to the array.
 #export
-static inline const T* DynamicArray[T]..as_ptr(const *self) {
+static inline const T* Da[T]..as_ptr(const *self) {
     return self->items;
 }
 
 /// Gets a mutable pointer to the array.
 #export
-static inline T* DynamicArray[T]..as_mut_ptr(*self) {
+static inline T* Da[T]..as_mut_ptr(*self) {
     return self->items;
 }
 
 /// Gets an item from the array.
 #export
-static inline T* DynamicArray[T]..get(const *self, size_t index) {
+static inline const T* Da[T]..get(const *self, size_t index) {
     if (index >= self..len()) {
         @panic("index out of range");
     }
@@ -128,11 +129,12 @@ static inline T* DynamicArray[T]..get(const *self, size_t index) {
 
 /// Pops the last item off the array.
 #export
-static inline Maybe[T] DynamicArray[T]..pop(*self) {
+static inline Maybe[T] Da[T]..pop(*self) {
     if (self->len == 0) {
         return none();
     }
-    return some(self->items[--self->len]);
+    T d = force_cast(self->items[--self->len]);
+    return some(move(d));
 }
 
 /// Clears the array.
@@ -141,20 +143,24 @@ static inline Maybe[T] DynamicArray[T]..pop(*self) {
 /// length to `0`. Accessing elements at this point would be reading
 /// garbage data.
 #export
-static inline void DynamicArray[T]..clear(*self) {
+static inline void Da[T]..clear(*self) {
     self->len = 0;
 }
 
 /// Copies the dynamic array into a new array.
 #export
-static DynamicArray[T] DynamicArray[T]..copy<alloc>(const *self) {
+static Da[T] Da[T]..copy<alloc>(const *self) {
     T *ptr = alloc..allocate((Layout){ .size = self->capacity, .align = @align_of(T) });
     memcpy(ptr, self->items, self->len);
-    DynamicArray[T] new = { .len = self->len, .capacity = self->capacity, .items = ptr };
+    Da[T] new = { .len = self->len, .capacity = self->capacity, .items = ptr };
     return move(new);
 }
 
-void DynamicArray[T]..drop<alloc: self>(*self) {
+void Da[T]..drop<alloc: self>(*self) {
+    for (size_t i = 0; i < self..len(); i++) {
+        T *k = &self->items[i];
+        k..drop();
+    }
     alloc..deallocate(self->items, self..layout());
 }
 
@@ -163,9 +169,9 @@ void DynamicArray[T]..drop<alloc: self>(*self) {
     #import std::alloc { Allocator, general_allocator }
 
     #test
-    void general() {
+    void append_and_pop() {
         Allocator gpa = general_allocator();
-        DynamicArray[int] a = da_new<gpa>(.capacity = (size_t)10);
+        Da[int] a = da_new<gpa>(.capacity = (size_t)10);
         for (int i = 0; i < 100; i++) {
             a..append(10);
         }
@@ -173,5 +179,14 @@ void DynamicArray[T]..drop<alloc: self>(*self) {
             a..pop();
         }
         assert(a..len() == 50);
+    }
+
+    #test
+    void array_of_arrays() {
+        Da[Da[int]] arr = da_new(.capacity = (size_t)10);
+        for (int i = 0; i < 100; i++) {
+            Da[int] r = da_new();
+            arr..append(move(r));
+        }
     }
 #endtests

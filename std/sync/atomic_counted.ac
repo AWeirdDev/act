@@ -1,10 +1,10 @@
 #include <stdatomic.h>
 
-#import "./_block" { Block, block_new, block_destroy }
+#import "./_block" { Block, block_new }
 
 typedef Block[atomic_size_t, T] AtomicCountedBlock[T];
 
-#meta privateconstruct
+#marker act::privateconstruct
 typedef struct {
     AtomicCountedBlock[T] *block;
 } AtomicCounted[T];
@@ -25,13 +25,11 @@ static inline AtomicCounted[T] AtomicCounted[T]..copy<alloc>(*self) {
 // FIXME: add ..drop() impl
 
 #tests
-
-#test
-void general() {
-    AtomicCounted[int] ac = atomic_counted_new(69);
-    ac..copy();
-    ac..copy();
-    ac..copy();
-}
-
+    #test
+    void general() {
+        AtomicCounted[int] ac = atomic_counted_new(69);
+        ac..copy();
+        ac..copy();
+        ac..copy();
+    }
 #endtests

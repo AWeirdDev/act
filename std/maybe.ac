@@ -3,8 +3,8 @@
 #import std::panic { panic }
 #import std::str { str }
 
-#meta maybe tag=present target=value empty=false
-#meta privateconstruct
+#marker act::maybe(tag=present, target=value, empty=false) act::privateconstruct
+#export
 typedef struct {
     bool present;
     T value;
@@ -19,28 +19,35 @@ static inline Maybe[T] some(T value) {
     return move(res);
 }
 
-// static inline Maybe[T*] Maybe[T]..as_referenced(*self) {
-//     if (self..is_none()) {
-//         return none();
-//     }
-//     // FIXME
-//     return some(&self->value);
-// }
-
+#export
 static inline bool Maybe[T]..is_some(*self) {
     return self->present;
 }
 
+#export
 static inline bool Maybe[T]..is_none(*self) {
     return !self->present;
 }
 
+#export
+static inline T Maybe[T]..unwrap_unchecked(self) {
+    return move(self.value);
+}
+
+#export
 static inline T Maybe[T]..unwrap(self) {
     if (self..is_none()) {
         @panic("found none during Maybe[T]..unwrap()");
     }
-    return move(self.value);
+    return self..unwrap_unchecked();
+}
+
+#export
+static inline T Maybe[T]..unwrap_or(self, T choice) {
+    if (self..is_none()) {
+        return move(choice);
+    }
+    return self..unwrap_unchecked();
 }
 
 #export { none, some }
-#export { Maybe, Maybe..is_some, Maybe..is_none, Maybe..unwrap }

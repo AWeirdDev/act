@@ -1,0 +1,108 @@
+#include <stddef.h>
+#include <string.h>
+
+#import std::da { Da, da_new }
+#import std::alloc { Allocator, Layout, align_of }
+#import std::panic { panic }
+#import std::maybe { Maybe, some, none }
+#import std::mem { force_cast }
+
+#export
+typedef struct {
+    Da[T] buf;
+    size_t head;
+} Queue[T];
+
+/// Creates a new queue.
+#export
+static inline Queue[T] queue_new<alloc>(size_t .capacity) {
+    Da[T] da = da_new<alloc>(.capacity = capacity);
+    return { .buf = move(da), .head = 0 };
+}
+
+#export
+static inline size_t Queue[T]..len(const *self) {
+    return self->buf..len() - self->head;
+}
+
+#export
+static inline void Queue[T]..reserve<alloc: self>(*self, size_t capacity) {
+    if (capacity <= self->buf.capacity) {
+        return;
+    }
+
+    size_t live = self..len();
+    size_t cap = self->buf..capacity();
+    if (cap == 0) {
+        cap = 1;
+    }
+
+    while (cap < capacity) {
+        cap *= 2;
+    }
+
+    T *ptr = alloc..allocate(
+        (Layout){ .size = sizeof(T) * cap, .align = @align_of(T) }
+    );
+    if (self->buf.items != NULL) {
+        if (live > 0) {
+            memcpy(ptr, self->buf.items + self->head, live * sizeof(T));
+        }
+        alloc..deallocate(self->buf.items, self->buf..layout());
+    }
+
+    self->buf.items = ptr;
+    self->buf.capacity = cap;
+    self->buf.len = live;
+    self->head = 0;
+}
+
+#export
+static inline void Queue[T]..push_back<alloc: self>(*self, T data) {
+    self..reserve(self..len() + 1);
+    self->buf..append(data);
+}
+
+/// Pops off the front of the queue.
+#export
+static inline Maybe[T] Queue[T]..pop_front(*self) {
+    if (self..len() < 1) {
+        return none();
+    }
+    T front = force_cast(self->buf.items[self->head]);
+    self->head += 1;
+    return some(move(front));
+}
+
+/// Gets the front of the queue as a pointer.
+#export
+static inline const T* Queue[T]..front(const *self) {
+    return self->buf..get(self->head);
+}
+
+/// Gets the back of the queue as a pointer.
+#export
+static inline const T* Queue[T]..back(const *self) {
+    return self->buf..get(self->buf..len() - 1);
+}
+
+#tests
+
+    #include <assert.h>
+
+    #test
+    void emplace_and_pop() {
+        Queue[int] a = {0};
+
+        for (int i = 0; i < 69; i++) {
+            a..push_back(i);
+        }
+
+        for (int i = 0; i < 67; i++) {
+            a..push_back(a..pop_front()..unwrap());
+        }
+
+        assert(*a..front() == 67);
+    }
+
+#endtests

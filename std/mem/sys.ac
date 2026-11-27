@@ -1,0 +1,8 @@
+/// Forget to call `drop()` for the given value.
+#export
+#marker std::forget
+void forget(T x);
+
+#export
+#marker std::force_cast
+void force_cast(T x);

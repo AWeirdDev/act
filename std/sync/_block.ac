@@ -1,6 +1,9 @@
 #import std::alloc { Layout, Allocator, layout_of }
 
-#meta privateconstruct
+/// A block contains both the underlying data and the
+/// weak & strong count.
+#marker act::privateconstruct
+#export
 typedef struct {
   T data;
   Size_T weak_count;
@@ -8,15 +11,16 @@ typedef struct {
 } Block[Size_T, T];
 
 /// Create a new block.
+#export
 static inline Block[Size_T, T] *block_new<alloc>(T data) {
     Block[Size_T, T] *ptr = alloc..allocate(@layout_of(Block[Size_T, T]));
     *ptr = (Block[Size_T, T]){ .data = data, 0 };
     return ptr;
 }
 
-/// Destroys a block.
-static inline void block_destroy<alloc>(Block[Size_T, T] *block) {
+/// Destroys a block. Unlike `drop()`, the transpiler treats it
+/// as a normal method.
+#export
+static inline void Block[Size_T, T]..destroy<alloc>(*block) {
     alloc..deallocate(block, @layout_of(Block[Size_T, T]));
 }
-
-#export { Block, block_new, block_destroy }

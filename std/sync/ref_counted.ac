@@ -3,15 +3,15 @@
 #import std::alloc { Layout, Allocator, layout_of }
 #import std::maybe { Maybe, some, none }
 
-#import "./_block" { Block, block_new, block_destroy }
+#import "./_block" { Block, block_new }
 
 typedef Block[size_t, T] RefCountedBlock[T];
 
 // RefCounted ==
 
 /// Reference-counted.
+#marker act::privateconstruct
 #export
-#meta privateconstruct
 typedef struct {
   RefCountedBlock[T] *block;
 } RefCounted[T];
@@ -68,7 +68,7 @@ void RefCounted[T]..drop(*self) {
         T..drop();
 
         if (self->block->weak_count == 0) {
-            block_destroy(self->block);
+            self->block..destroy();
         }
     }
 }
@@ -77,8 +77,8 @@ void RefCounted[T]..drop(*self) {
 
 // WeakRefCounted ==
 
+#marker act::privateconstruct
 #export
-#meta privateconstruct
 typedef struct {
   RefCountedBlock[T] *block;
 } WeakRefCounted[T];

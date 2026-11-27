@@ -1,0 +1,5 @@
+#import std::string { String }
+
+typedef struct {
+    String buf;
+} Formatter;

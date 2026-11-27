@@ -1,6 +1,14 @@
 #include <stdint.h>
 
 /// Memory layout.
+///
+/// ## Example
+/// ```ac
+/// Layout int_layout = {
+///   .size = sizeof(int),
+///   .align = @align_of(int)
+/// };
+/// ```
 typedef struct {
     size_t size;
     size_t align;

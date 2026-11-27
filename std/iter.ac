@@ -4,7 +4,7 @@
 #import std::pair { Pair }
 
 /// An iterator interface.
-#meta onevariant
+#marker act::onevariant
 interface Iter[T];
 
 /// Gets the next item.
@@ -30,7 +30,6 @@ Maybe[Pair[size_t, T]] (Iter[Pair[size_t, T]])EnumerateIter[I, T]..next(*self) {
 #export { Iter, EnumerateIter }
 
 #tests
-
     #import std::string { String, string_from_str }
 
     #test

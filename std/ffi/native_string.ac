@@ -1,5 +1,5 @@
 #import std::alloc { Allocator, Layout, align_of }
-#import std::da { DynamicArray, da_new }
+#import std::da { Da, da_new }
 #import std::string { String }
 #import std::panic { panic }
 
@@ -35,13 +35,13 @@
 
 /// A platform-native string.
 typedef struct {
-    DynamicArray[native_char] inner;
+    Da[native_char] inner;
 } NativeString;
 
 /// Create an empty platform-native string.
 #export
 static inline NativeString native_string_new<alloc>(size_t .capacity) {
-    DynamicArray[native_char] da = da_new<alloc>(.capacity = capacity);
+    Da[native_char] da = da_new<alloc>(.capacity = capacity);
     return { .inner = move(da) };
 }
 
@@ -54,7 +54,7 @@ static inline NativeString native_string_new<alloc>(size_t .capacity) {
                 @panic("failed to get wchar length");
             }
 
-            DynamicArray da = da_new(.capacity = (size_t)n);
+            Da da = da_new(.capacity = (size_t)n);
             bool result = wide_to_utf8(
                 self->inner..as_ptr(),
                 self->inner..len(),

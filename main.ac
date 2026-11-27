@@ -1,19 +1,21 @@
-#import std::str { str }
-#import std::string { String, string_new }
-#import std::panic { todo }
+#include <stdio.h>
 
+#import std::da { Da, da_new }
+#import std::collections { Queue, queue_new }
+#import std::panic { panic }
+#import std::maybe { Maybe }
+
+#nomangle
 int main() {
-    #run paste
-        #include <stdio.h>
-        printf(c"size_t i;\n");
-        for (size_t i = 0; i < 10; i++) {
-            printf(c"i = %zu;\n", i);
-            printf(c"printf(c\"%%zu\\n\", i);\n");
-        }
-    #endrun
-}
+    Queue[int] a = {0};
 
-int main2() {
-    String st = string_new();
+    for (int i = 0; i < 69; i++) {
+        a..push_back(i);
+    }
 
+    for (int i = 0; i < 67; i++) {
+        a..push_back(a..pop_front()..unwrap());
+    }
+
+    printf(c"%i\n", *a..front());
 }

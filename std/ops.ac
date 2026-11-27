@@ -4,6 +4,9 @@
 #export
 interface Equal;
 
+/// Checks the equality between this instance of the current type
+/// and another instance of the current type. You should pass it
+/// by pointer.
 bool Equal..eq(const *self, const Self *o);
 
 /// Comparison result.

@@ -4,7 +4,7 @@
 #import std::panic { panic }
 
 /// A generic error.
-#meta pick tag=passing target=as ok=true err=false
+#marker act::pick(tag=passing, target=as, ok=true, err=false)
 typedef struct {
     union {
         T ok;

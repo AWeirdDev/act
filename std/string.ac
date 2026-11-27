@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #import std::alloc { Allocator }
-#import std::da { DynamicArray, da_new }
+#import std::da { Da, da_new }
 #import std::str { str, str_from_parts }
 #import std::iter { Iter }
 #import std::maybe { Maybe, some, none }
@@ -10,57 +10,84 @@
 
 // String ==
 
+/// A non-null-terminated, heap-allocated string.
+///
+/// ## Example
+/// ```ac
+/// #import std::string { string_new }
+/// #import std::io { println }
+///
+/// String name = string_new();
+/// name..append('H');
+/// name..append_str("i, mom!");
+///
+/// println(name..as_str()); // Hi, mom!
+/// ```
+#export
 typedef struct {
-    DynamicArray[char] inner;
+    Da[char] inner;
 } String;
 
-/// Creates a new `std::string { String }`. This function does
+/// Creates a new heap-allocated string. This function does
 /// not allocate.
 ///
 /// Unlike zero-initializing, this ensures that the given
 /// `<alloc>` (allocator) is attached to the instance of this
 /// string.
+#export
 static inline String string_new<alloc>(size_t .capacity) {
-    DynamicArray[char] da = da_new<alloc>(.capacity = capacity);
+    Da[char] da = da_new<alloc>(.capacity = capacity);
     return (String){ .inner = move(da) };
 }
 
+/// Creates a new heap-allocated string from a C-style string,
+/// which has a trailing null terminator.
+///
+/// This function is `O(N)`, as copying is necessary to put everything
+/// into the buffer.
+#export
 static inline String string_from_cstr<alloc>(const char* cstr) {
     size_t len = strlen(cstr);
-    DynamicArray[char] da = da_new<alloc>(.capacity = len);
+    Da[char] da = da_new<alloc>(.capacity = len);
     memcpy(da.items, cstr, len);
     da.len = len;
     return (String){ .inner = move(da) };
 }
 
+#export
 static inline String string_from_str<alloc>(const str src) {
-    DynamicArray[char] da = da_new<alloc>(.capacity = src..len());
+    Da[char] da = da_new<alloc>(.capacity = src..len());
     memcpy(da.items, src..as_ptr(), src..len());
     da.len = src..len();
     return (String){ .inner = move(da) };
 }
 
 /// Appends a `char` to the string.
+#export
 static inline void String..append<alloc: self>(*self, char chr) {
     self->inner..append(chr);
 }
 
 /// Reserves space of at least `capacity` (unit: `char`).
+#export
 static inline void String..reserve<alloc: self>(*self, size_t capacity) {
     self->inner..reserve(capacity);
 }
 
 /// Pops off a character off the string, if it has one.
+#export
 static inline Maybe[char] String..pop(*self) {
     return self->inner..pop();
 }
 
 /// Gets the length of the string.
+#export
 static inline size_t String..len(const *self) {
     return self->inner.len;
 }
 
 /// Gets the character at the given index, if exists.
+#export
 static inline Maybe[char] String..checked_at(const *self, size_t index) {
     if (index >= self..len()) {
         return none();
@@ -70,18 +97,21 @@ static inline Maybe[char] String..checked_at(const *self, size_t index) {
 }
 
 /// Gets the character at the given index, if exists.
+#export
 static inline char String..at(const *self, size_t index) {
     return self->inner.items[index];
 }
 
 /// Gets a slice of the string.
 /// This is a shorthand method for `..as_str()..slice(start, end)`.
+#export
 static inline str String..slice(const *self, size_t start, size_t end) {
     str s = self..as_str();
     return s..slice(start, end);
 }
 
 /// Appends from a `str`.
+#export
 static inline void String..append_str<alloc: self>(*self, str src) {
     self->inner.len += src..len();
     self->inner..reserve(self->inner.len);
@@ -89,45 +119,44 @@ static inline void String..append_str<alloc: self>(*self, str src) {
 }
 
 /// Gets a `str` slice representation of this string.
+#export
 static inline str String..as_str(const *self) {
     return str_from_parts(self->inner.len, self->inner.items);
 }
 
 /// Gets the underlying character pointer.
+#export
 static inline const char* String..as_ptr(const *self) {
-    return self->inner.items;
+    return self->inner..as_ptr();
 }
 
 /// Gets the underlying character pointer, as mutable.
+#export
 static inline char* String..as_mut_ptr(*self) {
-    return self->inner.items;
+    return self->inner..as_mut_ptr();
 }
 
 /// Copies this string.
+#export
 static inline void String..copy<alloc>(const *self) {
     return self->inner..copy<alloc>();
 }
 
 /// Converts this string into a temporary C-style string, which is
 /// null-terminated.
+#export
 static inline TempCString String..to_temp_cstring<alloc>(self) {
-    // FIXME
+    self..append('\0');
     TempCString res = { move(self) };
-    res.src..append('\0');
     return move(res);
 }
 
+#export
 bool (Equal)String..eq(const *self, const String* o) {
     str me = self..as_str();
     str other = o..as_str();
     return me..eq(&other);
 }
-
-#export { string_new, string_from_cstr, string_from_str }
-#export { String, String..reserve, String..append, String..append_str, String..pop }
-#export { String..at, String..checked_at, String..copy, String..len }
-#export { String..as_str, String..as_ptr, String..as_mut_ptr }
-#export { String..to_temp_cstring }
 
 // == String
 
@@ -137,19 +166,21 @@ bool (Equal)String..eq(const *self, const String* o) {
 ///
 /// As the name suggests, it's temporary, and it should be
 /// created from a `std::string { String }`.
-#meta privateconstruct
+#export
+#marker act::privateconstruct
 typedef struct {
     String src;
 } TempCString;
 
-
 /// Gets the C-style string reference.
+#export
 static inline const char* TempCString..as_cstr(const *self) {
     return self->src..as_ptr();
 }
 
 /// Gets a `str` slice representation of the underlying string.
 /// However, the null byte is not part of the slice.
+#export
 static inline str TempCString..as_str(const *self) {
     str s = self->src..as_str();
     return str_from_parts(s..len() - 1, s..as_ptr());
@@ -157,16 +188,17 @@ static inline str TempCString..as_str(const *self) {
 
 /// Converts this temporary C-style string back to an
 /// `std::string { String }`.
+#export
 static inline String TempCString..revert_to_string(self) {
     return move(self.src);
 }
-
-#export { TempCString, TempCString..as_cstr, TempCString..as_str, TempCString..revert_to_string }
 
 // == TempCString
 
 // StringIter ==
 
+/// An iterator over a string.
+#export
 typedef struct {
     size_t counter;
     size_t len;
@@ -177,10 +209,12 @@ typedef struct {
 ///
 /// During iteration, the source string should never
 /// mutate.
+#export
 StringIter String..iter(const *self) {
     return { 0, self..len(), self->inner.items };
 }
 
+#export
 Maybe[char] (Iter[char])StringIter..next(*self) {
     if (self->counter >= self->len) {
         return none();
@@ -188,18 +222,5 @@ Maybe[char] (Iter[char])StringIter..next(*self) {
     return some((char)self->items[self->counter++]);
 }
 
-#export { String..iter, StringIter }
 
 // == StringIter
-
-#tests
-
-#import std::alloc { Allocator, general_allocator }
-
-#test
-void general() {
-    Allocator gpa = general_allocator();
-    String s = string_new<gpa>();
-}
-
-#endtests

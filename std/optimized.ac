@@ -3,7 +3,7 @@
 #import std::panic { panic }
 
 @macro make($ty $name) {
-    #meta neverzero field=inner
+    #marker act::neverzero(field=inner)
     typedef struct {
         $ty inner;
     } $name;
@@ -32,7 +32,7 @@
 
 // ptr ==
 
-#meta neverzero field=inner
+#marker act::neverzero(field=inner)
 typedef struct {
     T *inner;
 } nevernull[T];
