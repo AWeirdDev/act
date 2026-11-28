@@ -1,0 +1,22 @@
+#include <stddef.h>
+
+#import std::slice { MutSlice }
+
+#import "./result" { IoResult }
+
+typedef IoResult[size_t] ReadResult;
+
+typedef struct {
+    ReadResult (*__read)(void *ctx, MutSlice[uint8_t] buf);
+} VTable;
+
+#export
+typedef struct {
+    void *ctx;
+    VTable *vtable;
+} Reader;
+
+#export
+static inline ReadResult Reader..read(*self, MutSlice[uint8_t] buf) {
+    return self->vtable->__read(self->ctx, buf);
+}

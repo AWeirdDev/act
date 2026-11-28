@@ -6,7 +6,6 @@
 
 #import std::panic { panic }
 #import std::maybe { Maybe, some, none }
-#import std::intrinsics::primitives { SIZE_MAX }
 #import std::optimized { never0_size }
 
 /// From `<unistd.h>`

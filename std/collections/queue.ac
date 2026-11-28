@@ -77,13 +77,13 @@ static inline Maybe[T] Queue[T]..pop_front(*self) {
 /// Gets the front of the queue as a pointer.
 #export
 static inline const T* Queue[T]..front(const *self) {
-    return self->buf..get(self->head);
+    return self->buf..at(self->head);
 }
 
 /// Gets the back of the queue as a pointer.
 #export
 static inline const T* Queue[T]..back(const *self) {
-    return self->buf..get(self->buf..len() - 1);
+    return self->buf..at(self->buf..len() - 1);
 }
 
 #tests

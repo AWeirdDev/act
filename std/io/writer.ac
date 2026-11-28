@@ -1,0 +1,30 @@
+#include <stddef.h>
+
+#import std::slice { Slice }
+#import std::empty { Empty }
+
+#import "./result" { IoResult }
+
+typedef IoResult[size_t] WriteResult;
+typedef IoResult[Empty] FlushResult;
+
+typedef struct {
+    WriteResult (*__write)(void *ctx, Slice[uint8_t] buf);
+    FlushResult (*__flush)(void *ctx);
+} VTable;
+
+#export
+typedef struct {
+    void *ctx;
+    VTable *vtable;
+} Writer;
+
+#export
+static inline WriteResult Writer..write(*self, Slice[uint8_t] buf) {
+    return self->vtable->__write(self->ctx, buf);
+}
+
+#export
+static inline FlushResult Writer..flush(*self) {
+    return self->vtable->__flush(self->ctx);
+}

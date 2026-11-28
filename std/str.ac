@@ -8,6 +8,7 @@
 /// A fat string pointer.
 ///
 /// This is also known as an immutable string slice.
+#export
 typedef struct {
     Slice[char] inner;
 } str;
@@ -18,33 +19,89 @@ typedef struct {
 /// It should be guaranteed that the returned `str`
 /// slice should be of the same lifetime as the provided
 /// `cstr`.
-str str_from_cstr(const char* cstr) {
+static inline str str_from_cstr(const char* cstr) {
     size_t len = strlen(cstr);
     return { slice_from_parts(len, cstr) };
 }
 
-str str_from_parts(size_t len, const char* ptr) {
+#export
+static inline str str_from_parts(size_t len, const char* ptr) {
     // FIXME: same as above
     return { slice_from_parts(len, ptr) };
 }
 
+#export
 const char* str..as_ptr(const *self) {
     return self->inner..as_ptr();
 }
 
 /// Gets the length of the str slice.
+#export
 static inline size_t str..len(const *self) {
     return self->inner..len();
 }
 
-static inline char str..at(const *self, size_t index) {
+#export
+static inline const char* str..at(const *self, size_t index) {
     Slice[char] inner = self->inner;
-    char result = *inner..at(index);
-    return result;
+    return inner..at(index);
 }
 
-str str..slice(const *self, size_t start, size_t end) {
+#export
+static inline char str..get(const *self, size_t index) {
+    return *self..at(index);
+}
+
+#export
+static inline str str..slice(const *self, size_t start, size_t end) {
     return { self->inner..slice(start, end) };
+}
+
+#export
+static inline str str..strip_leftn(const *self, char c, size_t n) {
+    size_t start = 0;
+    for (size_t i = 0; i < self..len() && i < n; i++) {
+        if (self..get(i) == c) {
+            start++;
+        } else {
+            break;
+        }
+    }
+
+    Slice[char] s = {
+        .len = self..len() - start,
+        .ptr = self..as_ptr() + start
+    };
+    return { .inner = s };
+}
+
+#export
+static inline str str..strip_left(const *self, char c) {
+    return self..strip_leftn(c, SIZE_MAX);
+}
+
+#export
+static inline str str..strip_rightn(const *self, char c, size_t n) {
+    size_t start = self..len() - 1;
+    for (size_t i = 0; i < self..len() && i < n; i++) {
+        char item = self..get(self..len() - i - 1);
+        if (item == c) {
+            start--;
+        } else {
+            break;
+        }
+    }
+
+    Slice[char] s = {
+        .len = start + 1,
+        .ptr = self..as_ptr(),
+    };
+    return { .inner = s };
+}
+
+#export
+static inline str str..strip_right(const *self, char c) {
+    return self..strip_rightn(c, SIZE_MAX);
 }
 
 /// Checks if two string slices match.
@@ -57,18 +114,25 @@ bool (Equal)str..eq(const *self, const str *o) {
     return true;
 }
 
-#export { str_from_cstr, str_from_parts }
-#export { str, str..slice, str..len, str..as_ptr }
-
 #tests
+    #include <assert.h>
+    #import std::io { println }
 
-#include <assert.h>
+    #test
+    void check_eq() {
+        str a = "I love cheese!";
+        str b = "I love cheese!";
+        assert(a..eq(&b));
+    }
 
-#test
-void check_eq() {
-    str a = "I love cheese!";
-    str b = "I love cheese!";
-    assert(a..eq(&b));
-}
+    #test
+    void stripping() {
+        str a = "  hello!";
+        str result = a..strip_left(' ');
+        assert(result..len() == 6 && result..get(0) == 'h');
 
+        str b = "hello!     ";
+        str result2 = b..strip_right(' ');
+        assert(result2..len() == 6 && result2..get(0) == 'h');
+    }
 #endtests

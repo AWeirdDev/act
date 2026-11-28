@@ -2,7 +2,8 @@
 
 #import std::iter { Iter }
 
-/// An array slice of type `T`.
+/// A mutable array slice of type `T`.
+#export
 typedef struct {
     size_t len;
     T *ptr;
@@ -10,58 +11,53 @@ typedef struct {
 
 /// An array slice of type `T`, with the underlying
 /// data immutable.
+#export
 typedef struct {
     size_t len;
     const T *ptr;
 } Slice[T];
 
-#export { MutSlice, Slice }
-
-/// Creates a mutable slice from a pointer to an array.
-static inline MutSlice[T] mut_slice_from_array(T arr[]) {
-    return { .len = sizeof(arr) / sizeof(T), .ptr = arr };
-}
-/// Creates a immutable slice from a pointer to an array.
-static inline Slice[T] slice_from_array(const T arr[]) {
-    return { .len = sizeof(arr) / sizeof(T), .ptr = arr };
-}
-
-#export { mut_slice_from_array, slice_from_array }
-
+#export
 static inline MutSlice[T] mut_slice_from_parts(size_t len, T *ptr) {
     return { .len = len, .ptr = ptr };
 }
+
+#export
 static inline Slice[T] slice_from_parts(size_t len, const T *ptr) {
     return { .len = len, .ptr = ptr };
 }
 
-#export { mut_slice_from_parts, slice_from_parts }
-
+#export
 static inline const T* MutSlice[T]..as_ptr(const *self) {
     return self->ptr;
 }
+
+#export
 static inline const T* Slice[T]..as_ptr(const *self) {
     return self->ptr;
 }
 
-#export { MutSlice..as_ptr, Slice..as_ptr }
-
+#export
 static inline T* MutSlice[T]..as_mut_ptr(*self) {
     return self->ptr;
 }
 
-#export { MutSlice..as_mut_ptr }
+#export
+static inline Slice[T] MutSlice[T]..to_immutable(*self) {
+    return { .len = self->len, .ptr = self->ptr };
+}
 
 /// Gets the length of the slice.
+#export
 static inline size_t MutSlice[T]..len(const *self) {
     return self->len;
 }
+
 /// Gets the length of the slice.
+#export
 static inline size_t Slice[T]..len(const *self) {
     return self->len;
 }
-
-#export { MutSlice..len, Slice..len }
 
 @macro slice_impl($self, $start, $end) {
     if ($end > $self->len) {
@@ -78,21 +74,23 @@ static inline size_t Slice[T]..len(const *self) {
 }
 
 /// Gets a sliced view of the slice.
+#export
 MutSlice[T] MutSlice[T]..slice(*self, size_t start, size_t end) {
     @slice_impl(self, start, end)
 }
+
 /// Gets a sliced view of the slice.
+#export
 Slice[T] Slice[T]..slice(const *self, size_t start, size_t end) {
     @slice_impl(self, start, end)
 }
 
-#export { MutSlice..slice, Slice..slice }
-
+#export
 const T* Slice[T]..at(const *self, size_t index) {
     return &self->ptr[index];
 }
+
+#export
 const T* MutSlice[T]..at(const *self, size_t index) {
     return &self->ptr[index];
 }
-
-#export { Slice..at }

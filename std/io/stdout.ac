@@ -2,8 +2,8 @@
 
 #import std::str { str }
 
-#extern fwrite
-size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+/// size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+#extern fwrite fwrite
 
 /// Prints text to stdout.
 static inline void print(str text) {

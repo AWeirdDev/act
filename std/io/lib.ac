@@ -2,5 +2,6 @@
 
 #import "./stdout" { print, println }
 #import "./result" { IoResult }
+#export "./writer" { Writer }
 
 #export { print, println, IoResult }

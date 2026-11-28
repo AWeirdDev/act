@@ -1,0 +1,46 @@
+#guard compiler(gcc) || compiler(clang)
+    /// A type with exactly one value, carrying no data.
+    /// Use it where a type is required but no information is,
+    /// such as `Result[Empty, Error]`, where when a function
+    /// succeeds, it emits no noteworthy value.
+    ///
+    /// ## Size
+    /// There is no guarantee that this size is bound to be `0`,
+    /// as zero-sized structs are not accepted in standard C, but
+    /// some compilers like GCC or Clang do accept them. On unsupported
+    /// compilers, the size is `sizeof(unsigned char)`.
+    ///
+    /// ## Example
+    /// ```ac
+    /// #import std::result { Result, ok }
+    ///
+    /// Result[Empty, int] result = ok((Empty){});
+    /// ```
+    #export
+    typedef struct {
+        char _[0];
+    } Empty;
+#else
+    #export
+    typedef struct {
+        unsigned char _;
+    } Empty;
+#endguard
+
+#tests
+    #import std::result { Result, ok }
+
+    #guard compiler(gcc) || compiler(clang)
+        #test
+        void gcc_clang_check_size() {
+            Result[Empty, int] a = ok((Empty){});
+            static_assert(sizeof(a..unwrap()) == 0);
+        }
+    #endguard
+
+    #test
+    void cross_platform_check_size() {
+        Result[Empty, int] a = ok((Empty){});
+        static_assert(sizeof(a..unwrap()) <= sizeof(unsigned char));
+    }
+#endtests

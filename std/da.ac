@@ -120,7 +120,7 @@ static inline T* Da[T]..as_mut_ptr(*self) {
 
 /// Gets an item from the array.
 #export
-static inline const T* Da[T]..get(const *self, size_t index) {
+static inline const T* Da[T]..at(const *self, size_t index) {
     if (index >= self..len()) {
         @panic("index out of range");
     }
